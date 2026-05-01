@@ -1,0 +1,5 @@
+paths:
+  data: "data"
+  model: "models"
+  logs: "logs"
+debug: False

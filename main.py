@@ -1,5 +1,8 @@
+from src.constants import LOGGER
+
+
 def main():
-    print("Hello from applied-machine-learning!")
+    LOGGER.info("Hello from applied-machine-learning!")
 
 
 if __name__ == "__main__":

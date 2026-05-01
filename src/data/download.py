@@ -1,7 +1,11 @@
 import kagglehub
 import shutil
-from pathlib import Path
 import argparse
+from src.constants import (
+    DATA_DIR,
+    LOGGER,
+    DEBUG,
+)
 
 
 def download_data(force_download: bool = False) -> None:
@@ -11,12 +15,19 @@ def download_data(force_download: bool = False) -> None:
         force_download (bool): Whether to force download the data even if it
                                already exists. Defaults to False.
     """
-    path = Path("data/raw")
+    if DEBUG:
+        LOGGER.debug(f"Force Download: {force_download}")
+
+    path = DATA_DIR / "raw"
 
     if not force_download and (
         (path / "train").exists() and (path / "test").exists()
     ):
+        LOGGER.info("Data already exists. Skipping download.")
+
         return
+
+    LOGGER.info("Downloading data from Kaggle...")
 
     kagglehub.dataset_download(
         handle="tolgadincer/labeled-chest-xray-images",
@@ -25,6 +36,8 @@ def download_data(force_download: bool = False) -> None:
     )
 
     # Flatten the folder.
+    LOGGER.info("Cleaning up the folders...")
+
     nested_folder = path / "chest_xray"
 
     for item in nested_folder.iterdir():
@@ -40,6 +53,8 @@ def download_data(force_download: bool = False) -> None:
     # Force delete metadata.
     metadata_path = path / ".complete"
     shutil.rmtree(metadata_path, ignore_errors=True)
+
+    LOGGER.info("Data downloaded successfully.")
 
 
 if __name__ == "__main__":

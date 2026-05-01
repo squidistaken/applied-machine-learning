@@ -9,3 +9,5 @@ Repository for the Applied Machine Learning course (WBAI065-05) at the Universit
 ```bash
 uv sync
 ```
+
+3. Make a copy of the config.
