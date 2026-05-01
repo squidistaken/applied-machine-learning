@@ -1,6 +1,6 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
-\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[a4paper, top=1.5cm, bottom=1.5cm, left=1cm, right=1cm]{geometry}
 \usepackage{titling}
 \usepackage{graphicx}
 \usepackage{listings}
@@ -11,14 +11,17 @@
 \usepackage{amssymb}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{tabularx}
+\bibliographystyle{plain}
+\usepackage[table]{xcolor}
 
 \setlength{\droptitle}{-5em}
 \title{\textbf{Applied Machine Learning - Proposal}}
 \author{
         Anneke Catherine Naseef (S6490662) \\
         Marcus Harald Olof Persson (S5343798) \\
-        Ignacio Jacob Uroz Rodríguez (S) \\
-        Julian Sprietsma (S) \\
+        Ignacio Jacob Uroz Rodríguez (S5118913) \\
+        Julian Wilbert Sprietsma (S5096219) \\
 }
 \date{\today}
 
@@ -26,13 +29,220 @@
 
 \maketitle
 
-% Requirements
-% https://www.kaggle.com/datasets/tolgadincer/labeled-chest-xray-images
+\section{Preliminary Domain Knowledge}
 
+Our machine learning task is to classify and identify pneumonia in children's X-ray lung images. Pneumonia is an infection of the lungs and is one of the leading causes of child mortality \cite{yadav2023childhood}. The infection causes fluids to build up in the lungs which interfere with regular breathing. 
+
+Physicians use X-rays as one of the main tools for diagnosing pneumonia \cite{xrayspneumonia}. The fluids and pus that build up in the lungs show up on the X-ray as areas of increased opacity/whiteness due to the density of the matter. Different types of pneumonia present in different ways on the X-ray.
+
+In this project, we focus on two categories: bacterial pneumonia (lobar pneumonia), and viral pneumonia (Bronchopneumonia). Bacterial pneumonia often appears as a more solid white area in one lobe of the lungs, while viral pneumonia appears as a more patchy pattern in both lobes.
+
+\section{Preliminary Data Exploration}
+
+We utilise the dataset "Chest X-ray Images" from Kaggle, which contains paediatric chest X-rays categorised into three classes: \texttt{NORMAL}, \texttt{BACTERIA}, \texttt{VIRUS}. The dataset contains 5232 training images and 624 testing images \cite{tolgadincer_chest_xray_2018}. 
+
+In the preliminary data exploration, we observe the following key insights:
+
+\begin{itemize}
+    \item \textbf{Class Imbalance:} In figure \ref{fig:classes}, we see a significant class imbalance within the training set, with the \texttt{BACTERIA} class heavily outnumbering both \texttt{NORMAL} and \texttt{VIRUS} instances. This means a model will naturally be biased towards predicting bacterial pneumonia; we will be applying data augmentation and class-weighted loss functions to balance the three classes.
+    \item \textbf{Clinical Subtlety:} In figure \ref{fig:classes_img}, we see visually from our sample images that while \texttt{NORMAL} scans exhibit clear lung fields, distinguishing between \texttt{BACTERIA} and \texttt{VIRUS} is visually complex and prone to human error.
+    \item \textbf{Inconsistency in Image Dimensions:} In figure \ref{fig:classes_img}, we see the dataset contains images with varying resolutions and aspect ratios. This inconsistency prevents direct batching for neural network training and requires standardisation.
+    \item \textbf{Pixel Intensity Variations:} In figure \ref{fig:px_intensity}, we see significant differences in brightness and contrast distributions across the dataset. This variation likely stems from differences in X-ray machines, patient positioning, or exposure settings, necessitating a normalisation step.
+    \item \textbf{Linear Discriminant Analysis:} In figure \ref{fig:lda}, applying LDA, we see a distinct clustering for the \texttt{NORMAL} class. However, there is significant overlap between the \texttt{VIRUS} and \texttt{BACTERIA} classes in a lower-dimensional space. This means we will need to monitor in our models for false positives and false negatives.
+\end{itemize}
+
+\begin{figure}[!h]
+    \centering
+    % First row
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf//proposal//images/classes.png}
+        \caption{Class Distribution in Training Set}
+        \label{fig:classes}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf//proposal//images/classes_img.png}
+        \caption{Sample Chest X-Rays}
+        \label{fig:classes_img}
+    \end{subfigure}
+    
+    \vspace{0.5cm} % Add some vertical space between rows
+    
+    % Second row
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf//proposal//images/px_intensity.png}
+        \caption{Pixel Intensity Projection}
+        \label{fig:px_intensity}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf//proposal//images/lda.png}
+        \caption{LDA Projection}
+        \label{fig:lda}
+    \end{subfigure}
+    
+    \caption{Preliminary data exploration revealing class imbalances and dimensional overlap between classes.}
+    \label{fig:data_exploration_grid}
+\end{figure}
+
+\section{Proposed Preprocessing}
+
+Given the findings from our data exploration, preprocessing will play a significant role in the success of this project. Figure \ref{fig:preprocessing} is our proposal for preprocessing. Going through each step:
+
+\begin{enumerate}
+    \item \textbf{Bounding Box Extraction:} With the raw x-rays provided in the dataset, it is the case irrelevant that areas (abdomen, neck, medical equipment, etc.) may have been captured. By applying a bounding box, we isolate the region of interest, which, in the context of our project, is the lungs. This will mitigate the likelihood that the model learns spurious correlations (e.g. a wire on a patient's chest) instead of actual pneumonia features. 
+    \item \textbf{Resizing Standardisation:} All images will be resized to a standard resolution to prevent distortion when standardising the input dimensions. A standard resolution would be 224 x 224 pixels, but we will also generate smaller resolution sets, such as 128 x 128 and 64 x 64.
+    \item \textbf{Contrast Enhancement:} From figure \ref{fig:px_intensity}, the significant differences in brightness and contrast distributions in the dataset require us to apply CLAHE (Contrast Limited Adaptive Histogram Equalisation). This is a technique that divides the image into smaller grids/tiles to enhance contrast locally, preventing noise from being overamplified \cite{ZUIDERVELD1994474}. By doing this, we address these variations and enhance the visibility of lung opacities and subtle details without washing out the image.
+    \item \textbf{Normalisation:} Similarly, concerning pixel intensity, by normalising the raw image pixel intensity $[0, 255]$ to $[0,1]$, we ensure the numerical scale of the inputs is small. This mitigates numerical instability during backpropagation and will help gradient descent to converge much faster.
+    \item \textbf{Data Augmentation:} To combat class imbalance (more \texttt{BACTERIA} than \texttt{NORMAL} and \texttt{VIRUS}) and avoid the model from overfitting, data augmentations to simulate medical imagery/anatomic realism (small degree rotations, mild zooms, brightness/contrast shifts, etc.) will be made for the set.
+    \item \textbf{Data Splitting:} We will partition the training set using stratified $k$-fold cross-validation to tune hyperparameters and ensure generalisation.
+\end{enumerate}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{overleaf/proposal/images/preprocessing.png}
+    \caption{Proposed preprocessing}
+    \label{fig:preprocessing}
+\end{figure}
+
+\section{Proposed Model(s) and Baseline}
+
+\textbf{Baseline Model:} A simple 3-layer CNN with two convolutional blocks and one fully connected layer. The baseline model will follow the same preprocessing pipeline.
+
+\noindent \textbf{Proposed Models:} We propose two models to compare against our baseline.
+\begin{enumerate}
+    \item \textbf{LightGBM:} We will implement Microsoft's LightGBM \cite{10.5555/3294996.3295074} gradient boosting framework. LightGBM uses decision tree algorithms, which can be applied to this classification task. We will apply a grid-search strategy to tune the hyperparameters, these being the learning rate, the number of leaves, the minimum data in the leaves, and the max depth of the tree.
+    \item \textbf{Finetuned Pre-trained CNN:} We will utilise Transfer Learning with a pre-trained CNN architecture (e.g. ResNet-18 or similar) fine-tuned on our dataset. The model will be trained with the Adam optimiser alongside a class-weighted Cross-Entropy loss function to mitigate the \texttt{BACTERIA} class imbalance. To navigate the hyperparameter space, we will leverage a Bayesian Optimisation strategy; the primary hyperparameters to tune are the learning rate, batch size, and dropout rate.
+\end{enumerate}
+
+\section{Proposed Evaluation}
+
+\textbf{Classification Metrics:}
+\begin{itemize}
+    \item \textbf{Accuracy:} To provide a general baseline of overall correctness.
+    \item \textbf{Macro F1-score:} To evaluate performance evenly across all classes.
+    \item \textbf{Precision:} To monitor the rate of false positives.
+    \item \textbf{Recall:} To ensure we do not miss true positives (from false negatives).
+    \item \textbf{Confusion Matrix:} To visually track specific misclassifications between the classes.
+\end{itemize}
+
+\noindent \textbf{Uncertainty Metrics:}
+\begin{itemize}
+    \item \textbf{Expected Calibration Error (ECE):} To measure how closely the predicted probabilities align with the actual accuracy.
+    \item \textbf{Predictive Entropy:} To quantify the overall uncertainty in the model's predictions.
+\end{itemize}
+
+\noindent \textbf{Compression Metrics:}
+\begin{itemize}
+    \item \textbf{Model Size (MB):} To directly compare the sizes of our models.
+    \item \textbf{Inference Latency (ms):} To measure the computational speedup gained for real-time deployment.
+    \item \textbf{Trade-off Curve for Image Sizes:} To visually map the drop in accuracy against varying input resolutions.
+\end{itemize}
+
+We will detect overfitting and underfitting by plotting and monitoring the training and validation loss curves over the training epochs. We will utilise our cross-validation framework alongside Early Stopping (with 3-5 epochs) to halt training at the optimal convergence point.
+
+\section{Model Usage}
+
+The final model is intended for deployment as a clinical decision support system for radiologists. We will develop a web-based user interface using a Streamlit app, intended not only to demonstrate our project results but also to act as an interactive GUI to train and fine-tune the model directly from the web. This frontend will communicate with a FastAPI backend. 
+
+Upon uploading a new chest X-ray, the backend will run an inference and return the most likely diagnosis (\texttt{NORMAL}, \texttt{BACTERIAL}, or \texttt{VIRUS}) along with an uncertainty score. If the uncertainty is high, the system will flag the scan for mandatory human review rather than making a blind prediction.
+
+We aim to deploy the entire setup as a Docker container to guarantee easy setup, reproducibility, and cross-platform compatibility.
+
+\section{Risk Assessment}
+
+\begin{itemize}
+    \item \textbf{False Negatives:} Missing a pneumonia diagnosis could lead to delayed treatment and severe health deterioration.
+    \item \textbf{False Positives:} Incorrectly classifying a viral infection as a bacterial infection, or as no infection could lead to the overprescription of antibiotics, which in turn causes more resistant bacteria \cite{Morrison2020-ef}. 
+    \item \textbf{Data Bias:} The dataset is imagery on children's x-rays (one to five years old) \cite{kermany2018identifying}. The model may suffer from "data drift" and perform poorly if applied directly to adult chest X-rays without further fine-tuning.
+    \item \textbf{Over-reliance:} Clinicians might develop automation bias. The inclusion of uncertainty monitoring is a direct mitigation strategy for this risk.
+\end{itemize}
+
+\section{Individual Learning Outcomes}
+
+\begin{itemize}
+    \item \textbf{Anneke:} Understand (an implementation of) Image Classification and gain familiarity with developing an API (Bonus).
+    \item \textbf{Marcus:} Explore uncertainty quantification and model compression techniques.
+    \item \textbf{Ignacio:} Understand Machine Learning to a deeper and more useful level and put in practice the recently learned concepts about supervised learning.
+    \item \textbf{Julian:} Gain familiarity with different ML models and knowledge on how to evaluate and compare these models.
+\end{itemize}
+
+\section{Relation to Grading Specifications}
+We employ a real-world, high-dimensional dataset. We implement necessary preprocessing, cross-validation, data augmentation, regularisation, and hyperparameter tuning. We also compare our chosen models against a simple baseline.
+
+For project-dependent extras, we address class imbalance via stratified splits/augmentation, explore different types of models, fine-tune a pretrained model, and apply transfer learning.
+
+As extra challenges, we are tackling the following three:
+\begin{enumerate}
+    \item \textbf{Uncertainty Quantification:} Medical diagnostics require knowing when a model is "unsure." We will explore implementing uncertainty quantification methods (e.g. Monte Carlo Dropout) to estimate epistemic and aleatoric uncertainty, allowing the model to output confidence intervals alongside its predictions.
+    \item \textbf{Condensed AI:} To make the model deployable on resource-constrained edge devices (e.g. mobile clinics), we will apply model compression techniques. Additionally, we will conduct an ablation study on input image sizes to empirically determine the optimal trade-off between spatial resolution, inference speed, and classification accuracy.
+    \item \textbf{Containerisation:} We will containerise the application using Docker to ensure portability and environment reproducibility. This goes in line with our other challenge for condensed AI, as with containerisation, it needs to be efficient for deployment.
+\end{enumerate}
 
 \section{Timeline}
 
+Table \ref{tab:timeline} provides a predicted timeline. It aligns with the dates for required deliverables from the course.
+
+\begin{table}[!h]
+    \centering
+    \begin{tabularx}{\linewidth}{|l||X|X|X|X|X|X|X|X|X|X|X|}
+        \hline
+        \textbf{Task} & \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} & \textbf{W5} & \textbf{W6} & \textbf{W7} & \textbf{W8} & \textbf{W9} & \textbf{W10} & \textbf{W11} \\
+        \hline
+        \hline
+        Team Formation & \cellcolor{black} & & & & & & & & & & \\
+        \hline
+        Environment Setup & \cellcolor{black} & & & & & & & & & & \\
+        \hline
+        Project Proposal & \cellcolor{black} & \cellcolor{black} & & & & & & & & &\\
+        \hline
+        Preprocessing & & \cellcolor{black} & \cellcolor{black} & & & & & & & & \\
+        \hline
+        Train CNN & & & \cellcolor{black} & & & & & & & & \\
+        \hline
+        Train LightGBM & & & \cellcolor{black} & & & & & & & & \\
+        \hline
+        Finetune Pretrained CNN & & & & \cellcolor{black} & \cellcolor{black} & & & & & & \\
+        \hline
+        \textbf{BONUS:} Uncertainty Quantification & & & & \cellcolor{black} & \cellcolor{black} & & & & & & \\
+        \hline
+        \textbf{BONUS:} Model Compression & & & & & \cellcolor{black} & \cellcolor{black} & & & & & \\
+        \hline
+        FastAPI Backend & & & & & \cellcolor{black} & \cellcolor{black} & & & & & \\
+        \hline
+        \textbf{BONUS:} Containerisation & & & & & & \cellcolor{black} & \cellcolor{black} & & & & \\
+        \hline
+        Streamlit Frontend & & & & & & & \cellcolor{black} & \cellcolor{black} & & & \\
+        \hline
+        Cleanup & & & & & & & & \cellcolor{black} & \cellcolor{black} & & \\
+        \hline
+        Presentation & & & & & & & & \cellcolor{black} & \cellcolor{black} & & \\
+        \hline
+        Individual Reflection & & & & & & & & & & \cellcolor{black} & \cellcolor{black} \\
+        \hline
+    \end{tabularx}
+    \caption{Proposed Timeline}
+    \label{tab:timeline}
+\end{table}
 
 \section{Member Contributions}
+
+\begin{itemize}
+    \item \textbf{Anneke:} Majority of preliminary domain knowledge research, review of other proposal components.
+    \item \textbf{Marcus:} Data exploration, research, and writing the first draft for the bulk of this proposal.
+    \item \textbf{Ignacio:} Source research and final review and corrections before final submission.
+    \item \textbf{Julian:} Research on possible models, including XGBoost and LightGBM.
+\end{itemize}
+
+
+\newpage
+
+\bibliography{overleaf/proposal/references}
+
+
 
 \end{document}
