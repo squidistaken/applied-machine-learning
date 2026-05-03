@@ -23,12 +23,14 @@ class ChestXRayDataset(Dataset):
         Initialise the class.
 
         Args:
-            split (str): The dataset split, e.g., 'train' or 'test'.
-            augment (bool): If True, applies training augmentations. Defaults to False.
+            split (str): The dataset split.
+            augment (bool): Whether to apply data augmentations. Defaults to
+                            False.
             image_size (int): The edge size of the preprocessed square images.
                               Defaults to 224.
-            transform (callable, optional): Optional transform to be applied on a sample.
-                                            If None, default transforms are used.
+            transform (callable, optional): The transform to be applied on a
+                                            sample. If None, default transforms
+                                            are used. Defaults to None.
         """
         if DEBUG:
             LOGGER.debug(f"Split: {split}")
@@ -60,7 +62,7 @@ class ChestXRayDataset(Dataset):
     @staticmethod
     def compose_transforms(augment: bool) -> transforms.Compose:
         """
-        Apply a composition of transformations for the dataset.
+        Compose transformations for the dataset.
 
         Args:
             augment (bool): Whether to augment the data.
