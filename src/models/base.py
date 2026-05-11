@@ -1,6 +1,6 @@
-# TODO: Implement an abstract class for reusability for models.
+from src.data.dataset import ChestXRayDataset
 class BaseModel:
-    def __init__(self, dataset):
+    def __init__(self, dataset : ChestXRayDataset):
         # TODO import the dataset and extract the important attributes
         self.dataset = dataset
         self.classes = self.dataset.classes
