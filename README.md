@@ -28,10 +28,10 @@ uv run -m src.data.download [--force]
 ### Preprocessing and Feature Extraction
 
 ```bash
-uv run -m src.features.preprocess_data [--pipeline] [--lgb-size 64]
+uv run -m src.features.preprocess_data [--pipeline] [--lgb-size]
 ```
  * `--pipeline`: Chooses which pipeline to run: `pytorch`, `lightgbm`, `all`. Running the `pytorch` pipeline is required in order to run the `lightgbm` pipeline. Defaults to `all`.
-
+ * `--lgb-size`: Determines the edge size for downsampling in LightGBM feature extraction. Defaults to 64.
 
 ### Running Tests
 
