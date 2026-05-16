@@ -16,14 +16,25 @@ class BaseModel(ABC):
     """
 
     def __init__(
-        self, dataset: Union[ChestXRayDatasetLightGBM, ChestXRayDatasetPyTorch]
+        self,
+        dataset: Union[ChestXRayDatasetLightGBM, ChestXRayDatasetPyTorch],
+        file_extension: Optional[str] = None,
     ) -> None:
         self.dataset = dataset
-        self.classes = (
-            dataset.classes
-            if dataset is ChestXRayDatasetPyTorch
-            else ["BACTERIA", "NORMAL", "VIRUS"]
-        )
+
+        if isinstance(dataset, ChestXRayDatasetLightGBM):
+            self.classes = ["BACTERIA", "NORMAL", "VIRUS"]
+        elif isinstance(dataset, ChestXRayDatasetPyTorch):
+            self.classes = dataset.classes
+
+        if file_extension is not None:
+            self.file_extension = file_extension
+        elif isinstance(self.dataset, ChestXRayDatasetLightGBM):
+            self.file_extension = ".txt"
+        elif isinstance(self.dataset, ChestXRayDatasetPyTorch):
+            self.file_extension = ".pt"
+        else:
+            self.file_extension = ".model"
 
     @abstractmethod
     def forward_pass(self, x: Any) -> Any:
@@ -34,7 +45,7 @@ class BaseModel(ABC):
             x (Any): The input data.
 
         Returns:
-            Any: The predicted class labels or probabilities.
+            Any: A list of predicted class labels or probabilities.
         """
         ...
 
@@ -46,16 +57,17 @@ class BaseModel(ABC):
         Args:
             x_train (Any): The training data.
             y_train (Any): The training labels.
-            **kwargs: Additional hyperparamters or configuration.
+            **kwargs: The additional hyperparamters or configuration.
 
         Returns:
             Any: The trained model.
         """
         ...
 
+    @abstractmethod
     def evaluate(self, x_test: Any, y_test: Any) -> Any:
         """
-        Test the performance of the model
+        Test the performance of the model.
 
         Args:
             x_test (Any): The testing data features.
@@ -74,16 +86,9 @@ class BaseModel(ABC):
             filename (str): The path to save the model to.
         """
         if filename is None:
-            default_ext = (
-                ".pt"
-                if isinstance(self.dataset, ChestXRayDatasetPyTorch)
-                else ".model"
-            )
-            ext = getattr(self, "FILE_EXTENSION", default_ext)
-            filename = f"{self.__class__.__name__}{ext}"
+            filename = f"{self.__class__.__name__}{self.file_extension}"
 
         path = MODELS_DIR / filename
-
         path.parent.mkdir(parents=True, exist_ok=True)
 
         LOGGER.info(f"Saving model to {path}...")
@@ -108,19 +113,12 @@ class BaseModel(ABC):
             filename (str): The path to load the model from.
         """
         if filename is None:
-            default_ext = (
-                ".pt"
-                if isinstance(self.dataset, ChestXRayDatasetPyTorch)
-                else ".model"
-            )
-            ext = getattr(self, "FILE_EXTENSION", default_ext)
-            filename = f"{self.__class__.__name__}{ext}"
+            filename = f"{self.__class__.__name__}{self.file_extension}"
 
         path = MODELS_DIR / filename
 
         if not path.exists():
             LOGGER.error(f"Model file not found: {path}")
-
             raise FileNotFoundError(
                 f"Cannot load model. File does not exist: {path}"
             )
