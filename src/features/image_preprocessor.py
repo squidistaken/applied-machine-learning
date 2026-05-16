@@ -3,6 +3,9 @@ import numpy as np
 from PIL import Image
 import imutils
 from src.constants import LOGGER
+from typing import List
+from torchvision import transforms
+import torch.nn as nn
 
 
 class ImagePreprocessor:
@@ -158,3 +161,19 @@ class ImagePreprocessor:
         pil_image = Image.fromarray(image)
 
         pil_image.save(path, format=format)
+
+    @staticmethod
+    def get_augmentations() -> List[nn.Module]:
+        """Get the data augmentations for the dataset.
+
+        Returns:
+            List[nn.Module]: A list of augmentations.
+        """
+        return [
+            transforms.RandomAffine(
+                degrees=5,
+                scale=(0.9, 1.1),
+                shear=5,
+            ),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        ]
