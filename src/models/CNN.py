@@ -116,7 +116,7 @@ class CNN(BaseModel, nn.Module):
         """
         Test the performance of the model.
 
-        Returns:
+        Returns: FIXME should be macro f1 score, precision, recall and confusion matrix
             accuracy
         """
 
