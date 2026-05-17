@@ -6,7 +6,7 @@ dataset = ...
 model = CNN(dataset) #placeholder, should be generic in the end
 epoch_number = 0
 
-EPOCHS = 5
+EPOCHS = 10
 
 best_vloss = 1_000_000.
 
