@@ -41,22 +41,21 @@ class DataDownloader:
             LOGGER.info(
                 "No nested 'chest_xray' folder found. Skipping flattening."
             )
-
             return
 
         for item in nested_folder.iterdir():
             dest = self.raw_data_path / item.name
-
             if dest.exists():
-                shutil.rmtree(dest) if dest.is_dir() else dest.unlink()
-
+                if dest.is_dir():
+                    shutil.rmtree(dest)
+                else:
+                    dest.unlink()
             shutil.move(str(item), str(dest))
 
-        nested_folder.rmdir()
+        # There might be hidden files/metadata, so this performs a full wipe.
+        shutil.rmtree(nested_folder)
 
-        # Force delete any metadata that might be created by KaggleHub.
         metadata_path = self.raw_data_path / ".complete"
-
         shutil.rmtree(metadata_path, ignore_errors=True)
         LOGGER.info("Folder structure cleaned.")
 

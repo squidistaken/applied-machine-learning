@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from src.models.base import BaseModel
-from src.data.dataset import ChestXRayDataset
+from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 
 
 class CNN(BaseModel, nn.Module):
@@ -17,39 +17,35 @@ class CNN(BaseModel, nn.Module):
 
     """
 
-    def __init__(self, dataset: ChestXRayDataset, learning_rate: float = 0.001):
+    def __init__(
+        self, dataset: ChestXRayDatasetPyTorch, learning_rate: float = 0.001
+    ):
         BaseModel.__init__(self, dataset)
         nn.Module.__init__(self)
 
         self.num_classes = len(self.classes)
 
-        #the layer 1 is the first convolutional layer
+        # the layer 1 is the first convolutional layer
         self.conv1 = nn.Conv2d(
-            in_channels=1,
-            out_channels=16,
-            kernel_size=3,
-            padding=1
+            in_channels=1, out_channels=16, kernel_size=3, padding=1
         )
 
-        #the layer 2 is the second convolutional layer
+        # the layer 2 is the second convolutional layer
         self.conv2 = nn.Conv2d(
-            in_channels=16,
-            out_channels=32,
-            kernel_size=3,
-            padding=1
+            in_channels=16, out_channels=32, kernel_size=3, padding=1
         )
 
-        #extra operations used between layers
+        # extra operations used between layers
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        #this makes the model work even if the image size changes
+        # this makes the model work even if the image size changes
         self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
 
-        #the layer 3 is a fully connected layer
+        # the layer 3 is a fully connected layer
         self.fc = nn.Linear(32, self.num_classes)
 
-        #training setup
+        # training setup
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
 
@@ -120,7 +116,7 @@ class CNN(BaseModel, nn.Module):
         """
         Test the performance of the model.
 
-        Returns:
+        Returns: FIXME should be macro f1 score, precision, recall and confusion matrix
             accuracy
         """
 
@@ -137,14 +133,14 @@ class CNN(BaseModel, nn.Module):
 
         return accuracy
 
-    def save(self, path):
+    def _save_weights(self, path):
         """
         Save model weights.
         """
 
         torch.save(self.state_dict(), path)
 
-    def load(self, path):
+    def _load_weights(self, path):
         """
         Load a trained model.
         """
