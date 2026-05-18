@@ -10,4 +10,4 @@ class resnet(BaseModel, nn.Module):
         BaseModel.__init__(self, dataset)
         nn.Module.__init__(self)
 
-        self.model = resnet18()
+        self.model = resnet18(weights='DEFAULT')
