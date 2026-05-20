@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from src.constants import DATA_DIR, LOGGER
-from src.data.preprocess_image import ImagePreprocessor
+from src.features.image_preprocessor import ImagePreprocessor
 
 
 def preprocess_split(
@@ -96,15 +96,13 @@ def preprocess_data() -> None:
 
         return
 
-    LOGGER.info(f"Discovered classes: {classes}")
-
     splits = ["train", "test"]
     preprocessor = ImagePreprocessor()
 
     for split_name in splits:
         preprocess_split(split_name, classes, preprocessor)
 
-    LOGGER.info("Dataset preprocessing complete.")
+    LOGGER.info("Pytorch dataset preprocessing complete.")
 
 
 def main() -> None:

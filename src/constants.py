@@ -9,7 +9,7 @@ with open(ROOT_DIR / "config.yaml", "r") as config_file:
     paths = data["paths"]
 
 DATA_DIR = ROOT_DIR / Path(paths["data"])
-MODEL_DIR = ROOT_DIR / Path(paths["model"])
+MODELS_DIR = ROOT_DIR / Path(paths["models"])
 LOGS_DIR = ROOT_DIR / Path(paths["logs"])
 DEBUG = data["debug"]
 LOGGER = Logger("aml")
