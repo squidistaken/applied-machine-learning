@@ -3,7 +3,6 @@ import numpy as np
 from PIL import Image
 import imutils
 from src.constants import LOGGER
-from typing import List
 from torchvision import transforms
 import torch.nn as nn
 
@@ -73,7 +72,7 @@ class ImagePreprocessor:
             # If there are no countours, the image is fine as is.
             return image
 
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+        cnts: list = sorted(cnts, key=cv2.contourArea, reverse=True)
 
         # We assumme the two largest countours are the lungs, so we create a
         # bounding box to encompass them.
@@ -163,11 +162,11 @@ class ImagePreprocessor:
         pil_image.save(path, format=format)
 
     @staticmethod
-    def get_augmentations() -> List[nn.Module]:
+    def get_augmentations() -> list[nn.Module]:
         """Get the data augmentations for the dataset.
 
         Returns:
-            List[nn.Module]: A list of augmentations.
+            list[nn.Module]: A list of augmentations.
         """
         return [
             transforms.RandomAffine(

@@ -2,6 +2,8 @@
 /data/
 /logs/
 /models/
+/results/
+/habrok/
 config.yaml
 
 # Byte-compiled / optimized / DLL files
