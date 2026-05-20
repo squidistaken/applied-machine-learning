@@ -13,7 +13,10 @@ class ResNet(CNN):
     """
 
     def __init__(
-        self, dataset: ChestXRayDatasetPyTorch, learning_rate: float = 0.001
+        self,
+        dataset: ChestXRayDatasetPyTorch,
+        learning_rate: float = 0.001,
+        weight_decay: float = 0.0,
     ):
         """
         Initialise the class.
@@ -21,7 +24,9 @@ class ResNet(CNN):
         Args:
             dataset (ChestXRayDatasetPyTorch): The dataset to train on.
             learning_rate (float): The learning rate for training. Defaults to
-                                   0.05.
+                                   0.001.
+            weight_decay (float): The weight decay (L2 penalty). Defaults to
+                                  0.0.
         """
         BaseModel.__init__(self, dataset)
         nn.Module.__init__(self)
@@ -49,7 +54,9 @@ class ResNet(CNN):
         num_ftrs = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(num_ftrs, self.num_classes)
         self.loss_function = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adam(
+            self.parameters(), lr=learning_rate, weight_decay=weight_decay
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Run the forward pass.

@@ -15,7 +15,10 @@ class CNN(BaseModel, nn.Module):
     """
 
     def __init__(
-        self, dataset: ChestXRayDatasetPyTorch, learning_rate: float = 0.001
+        self,
+        dataset: ChestXRayDatasetPyTorch,
+        learning_rate: float = 0.001,
+        weight_decay: float = 0.0,
     ) -> None:
         """Initialise the class.
 
@@ -23,6 +26,8 @@ class CNN(BaseModel, nn.Module):
             dataset (ChestXRayDatasetPyTorch): The dataset to train on.
             learning_rate (float): The learning rate for training. Defaults to
                                    0.001.
+            weight_decay (float): The weight decay (L2 penalty). Defaults to
+                                  0.0.
         """
         BaseModel.__init__(self, dataset)
         nn.Module.__init__(self)
@@ -42,7 +47,9 @@ class CNN(BaseModel, nn.Module):
         self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(32, self.num_classes)
         self.loss_function = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adam(
+            self.parameters(), lr=learning_rate, weight_decay=weight_decay
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Run the forward pass.

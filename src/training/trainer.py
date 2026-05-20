@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Subset, Dataset
+from torch.utils.data import DataLoader, Subset, Dataset, WeightedRandomSampler
 from typing import Optional, Union, cast
 import numpy as np
 import matplotlib.pyplot as plt
@@ -75,8 +75,35 @@ class Trainer:
             self.device = torch.device(device)
             pytorch_model = cast(nn.Module, self.model)
             pytorch_model.to(self.device)
+
+            # We handle class imbalance with the WeightedRandomSampler.
+            sampler = None
+            shuffle_train = True
+
+            if isinstance(train_data, ChestXRayDatasetPyTorch):
+                weights = train_data.compute_sample_weights()
+                sampler = WeightedRandomSampler(
+                    weights, num_samples=len(weights), replacement=True
+                )
+                shuffle_train = False
+
+            elif isinstance(train_data, Subset) and isinstance(
+                train_data.dataset, ChestXRayDatasetPyTorch
+            ):
+                all_weights = train_data.dataset.compute_sample_weights()
+                subset_weights = [all_weights[i] for i in train_data.indices]
+                sampler = WeightedRandomSampler(
+                    subset_weights,
+                    num_samples=len(subset_weights),
+                    replacement=True,
+                )
+                shuffle_train = False
+
             self.train_loader = DataLoader(
-                cast(Dataset, train_data), batch_size=batch_size, shuffle=True
+                cast(Dataset, train_data),
+                batch_size=batch_size,
+                shuffle=shuffle_train,
+                sampler=sampler,
             )
             self.eval_loader = DataLoader(
                 cast(Dataset, eval_data), batch_size=batch_size, shuffle=False

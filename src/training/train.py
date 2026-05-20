@@ -20,6 +20,7 @@ def train_model(
     patience: int = 3,
     num_leaves: int = 31,
     max_depth: int = -1,
+    weight_decay: float = 0.0,
     device: str = DEVICE,
 ) -> None:
     """
@@ -34,6 +35,8 @@ def train_model(
         num_leaves (int): The number of leaves (LightGBM only). Defaults to 31.
         max_depth (int): The maximum tree depth (LightGBM only). Defaults to
                          -1.
+        weight_decay (float): The weight decay (L2 penalty) (PyTorch only).
+                              Defaults to 0.0.
         device (str): The device to run models on. Defaults to DEVICE.
     """
     LOGGER.info(
@@ -60,9 +63,17 @@ def train_model(
         eval_data = Subset(val_dataset, val_idx)
 
         if model_name == "cnn":
-            model = CNN(dataset=train_dataset, learning_rate=lr)
+            model = CNN(
+                dataset=train_dataset,
+                learning_rate=lr,
+                weight_decay=weight_decay,
+            )
         else:
-            model = ResNet(dataset=train_dataset, learning_rate=lr)
+            model = ResNet(
+                dataset=train_dataset,
+                learning_rate=lr,
+                weight_decay=weight_decay,
+            )
 
     elif model_name == "lgbm":
         full_train = ChestXRayDatasetLightGBM(split="train", augmented=False)
@@ -125,6 +136,7 @@ def train_model(
         f.write(f"Epochs: {epochs}\n")
         if model_name in ["cnn", "resnet"]:
             f.write(f"Batch Size: {batch_size}\n")
+            f.write(f"Weight Decay: {weight_decay}\n")
             f.write(f"Device: {device}\n")
         elif model_name == "lgbm":
             f.write(f"Num Leaves: {num_leaves}\n")
@@ -191,6 +203,12 @@ def main() -> None:
         help="Maximum tree depth (LightGBM only).",
     )
     parser.add_argument(
+        "--weight-decay",
+        type=float,
+        default=0.0,
+        help="Weight decay (L2 penalty) for PyTorch models. Defaults to 0.0.",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default=DEVICE,
@@ -225,6 +243,7 @@ def main() -> None:
         patience=args.patience,
         num_leaves=args.num_leaves,
         max_depth=args.max_depth,
+        weight_decay=args.weight_decay,
         device=args.device,
     )
 

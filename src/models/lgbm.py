@@ -47,6 +47,7 @@ class LightGBM(BaseModel):
             "max_depth": max_depth,
             "verbose": -1,
             "random_state": 42,
+            "class_weight": "balanced",
         }
 
         # Safely update with any additional custom parameters passed in

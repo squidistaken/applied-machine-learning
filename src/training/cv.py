@@ -29,6 +29,7 @@ def cross_validate(
     epochs: int = 10,
     batch_size: int = DEFAULT_BATCH_SIZE,
     learning_rate: Optional[float] = None,
+    weight_decay: float = 0.0,
     device: str = DEVICE,
     num_leaves: int = DEFAULT_NUM_LEAVES,
     max_depth: int = DEFAULT_MAX_DEPTH,
@@ -48,6 +49,8 @@ def cross_validate(
         batch_size (int): The size of the batches. Defaults to
                           DEFAULT_BATCH_SIZE.
         learning_rate (float, optional): The learning rate. Defaults to None.
+        weight_decay (float): The weight decay (L2 penalty) for PyTorch
+                              models. Defaults to 0.0.
         device (str): The device to run models on. Defaults to DEVICE.
         num_leaves (int): The number of leaves (LightGBM only). Defaults to
                           DEFAULT_NUM_LEAVES.
@@ -98,7 +101,11 @@ def cross_validate(
             train_subset = Subset(dataset_pytorch, train_idx)
             val_subset = Subset(dataset_val_pytorch, val_idx)
 
-            model = model_class(dataset=dataset_pytorch, learning_rate=lr)
+            model = model_class(
+                dataset=dataset_pytorch,
+                learning_rate=lr,
+                weight_decay=weight_decay,
+            )
 
             trainer = Trainer(
                 model=model,
@@ -155,7 +162,11 @@ def run_grid_search(
 
     # NOTE: This is where you can configure the grid.
     if model_name in ["cnn", "resnet"]:
-        grid = {"lr": [1e-4, 1e-3, 1e-2], "batch_size": [16, 32]}
+        grid = {
+            "lr": [1e-4, 1e-3, 1e-2],
+            "batch_size": [16, 32],
+            "weight_decay": [0.0, 1e-4],
+        }
     else:
         grid = {
             "lr": [0.01, 0.05, 0.1],
@@ -200,6 +211,7 @@ def run_grid_search(
                 epochs=epochs,
                 batch_size=config["batch_size"],
                 learning_rate=config["lr"],
+                weight_decay=config["weight_decay"],
                 device=device,
             )
         else:
@@ -290,6 +302,12 @@ def main() -> None:
         help="Learning rate. Defaults dynamically (1e-3 for PyTorch, 0.05 for LightGBM).",
     )
     parser.add_argument(
+        "--weight-decay",
+        type=float,
+        default=0.0,
+        help="Weight decay (L2 penalty) for PyTorch models. Defaults to 0.0.",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default=DEVICE,
@@ -350,6 +368,7 @@ def main() -> None:
                 epochs=epochs,
                 batch_size=DEFAULT_BATCH_SIZE,
                 learning_rate=lr,
+                weight_decay=args.weight_decay,
                 device=args.device,
             )
         elif args.model == "lgbm":
@@ -381,6 +400,7 @@ def main() -> None:
             f.write(f"Defaults - LR              : {lr}\n")
             if args.model in ["cnn", "resnet"]:
                 f.write(f"Defaults - Batch Size      : {DEFAULT_BATCH_SIZE}\n")
+                f.write(f"Defaults - Weight Decay    : {args.weight_decay}\n")
                 f.write(f"Device                     : {args.device}\n")
             elif args.model == "lgbm":
                 f.write(f"Defaults - Num Leaves      : {DEFAULT_NUM_LEAVES}\n")
