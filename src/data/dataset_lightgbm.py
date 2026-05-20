@@ -18,9 +18,10 @@ class ChestXRayDatasetLightGBM:
         """
         self.split = split
         self.augmented = augmented
+        self.classes = ["BACTERIA", "NORMAL", "VIRUS"]
 
         folder = "processed" if augmented else "features"
-        self.csv_path = DATA_DIR / folder / f"{split}_lightgbm.csv"
+        self.csv_path = DATA_DIR / folder / f"{split}.csv"
 
         if DEBUG:
             LOGGER.debug(f"Split: {split}")

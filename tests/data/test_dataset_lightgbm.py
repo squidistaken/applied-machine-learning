@@ -43,7 +43,7 @@ def test_init_and_create_dataset(
     """
     features_dir, dummy_df = dummy_lgbm_data
     mock_read_csv.return_value = dummy_df
-    csv_path = features_dir / "train_lightgbm.csv"
+    csv_path = features_dir / "train.csv"
     csv_path.touch()
     dataset = ChestXRayDatasetLightGBM(split="train", augmented=False)
 
@@ -71,7 +71,7 @@ def test_getitem(
     features_dir, dummy_df = dummy_lgbm_data
     mock_read_csv.return_value = dummy_df
 
-    (features_dir / "train_lightgbm.csv").touch()
+    (features_dir / "train.csv").touch()
 
     dataset = ChestXRayDatasetLightGBM(split="train", augmented=False)
     features, label = dataset[1]
@@ -95,7 +95,7 @@ def test_get_data(
     features_dir, dummy_df = dummy_lgbm_data
     mock_read_csv.return_value = dummy_df
 
-    (features_dir / "train_lightgbm.csv").touch()
+    (features_dir / "train.csv").touch()
 
     dataset = ChestXRayDatasetLightGBM(split="train", augmented=False)
     X, y = dataset.get_data()
@@ -122,7 +122,7 @@ def test_get_lgb_dataset(
     features_dir, dummy_df = dummy_lgbm_data
     mock_read_csv.return_value = dummy_df
 
-    (features_dir / "train_lightgbm.csv").touch()
+    (features_dir / "train.csv").touch()
 
     dataset = ChestXRayDatasetLightGBM(split="train", augmented=False)
 

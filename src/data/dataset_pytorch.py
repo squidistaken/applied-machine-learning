@@ -86,7 +86,7 @@ class ChestXRayDatasetPyTorch(Dataset):
             class_index = self.class_to_idx[target_class]
             class_dir = self.root_dir / target_class
 
-            for img_path in class_dir.glob("*.pgm"):
+            for img_path in sorted(class_dir.glob("*.pgm")):
                 images.append((str(img_path), class_index))
 
         return images
@@ -99,7 +99,7 @@ class ChestXRayDatasetPyTorch(Dataset):
         """
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> tuple[Image.Image, int]:
+    def __getitem__(self, index: int) -> tuple[Image.Image, int]:
         """Get the sample at the given index of the dataset.
 
         Args:
@@ -109,7 +109,7 @@ class ChestXRayDatasetPyTorch(Dataset):
             tuple[Image.Image, int]: A sample containing the image and its
                                      corresponding target class.
         """
-        img_path, target = self.samples[idx]
+        img_path, target = self.samples[index]
 
         try:
             image = Image.open(img_path).convert("L")
