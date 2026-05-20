@@ -1,6 +1,4 @@
 # TODO: An all-purpose training loop for models.
-
-
 import torch
 from torch import nn
 from torch.utils.data import DataLoader

@@ -117,7 +117,7 @@ class CNN(BaseModel, nn.Module):
         Test the performance of the model.
 
         Returns: FIXME should be macro f1 score, precision, recall and confusion matrix
-            accuracy
+            accuracy NOTE in lightgbm model the function under the same name returns -> Dict[str, float]
         """
 
         self.eval()
