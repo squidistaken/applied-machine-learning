@@ -248,12 +248,12 @@ def run_grid_search(
     grid_report_path = RESULTS_DIR / f"{model_name}_grid_search_results.txt"
     with open(grid_report_path, "w") as f:
         f.write("==================================================\n")
-        f.write(" {model_name.upper()} GRID SEARCH CV RESULTS REPORT\n")
+        f.write(f" {model_name.upper()} GRID SEARCH CV RESULTS REPORT\n")
         f.write("==================================================\n\n")
         f.write("CONFIGURATION SUMMARY:\n")
-        f.write("Folds (K) : {splits}\n")
-        f.write("Epochs    : {epochs}\n")
-        f.write("Total Combinations Tested: {len(combinations)}\n\n")
+        f.write(f"Folds (K) : {splits}\n")
+        f.write(f"Epochs    : {epochs}\n")
+        f.write(f"Total Combinations Tested: {len(combinations)}\n\n")
         f.write("DETAILED RUN LOG:\n")
         f.write("-----------------\n")
         for idx, (conf, metr) in enumerate(results):
@@ -306,6 +306,12 @@ def main() -> None:
         type=float,
         default=0.0,
         help="Weight decay (L2 penalty) for PyTorch models. Defaults to 0.0.",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=32,
+        help="Batch size (PyTorch only). Defaults to 32.",
     )
     parser.add_argument(
         "--device",
@@ -366,7 +372,7 @@ def main() -> None:
                 dataset_val=dataset_val,
                 n_splits=args.splits,
                 epochs=epochs,
-                batch_size=DEFAULT_BATCH_SIZE,
+                batch_size=args.batch_size,
                 learning_rate=lr,
                 weight_decay=args.weight_decay,
                 device=args.device,
@@ -399,7 +405,7 @@ def main() -> None:
             f.write(f"Epochs / Boosting Rounds   : {epochs}\n")
             f.write(f"Defaults - LR              : {lr}\n")
             if args.model in ["cnn", "resnet"]:
-                f.write(f"Defaults - Batch Size      : {DEFAULT_BATCH_SIZE}\n")
+                f.write(f"Defaults - Batch Size      : {args.batch_size}\n")
                 f.write(f"Defaults - Weight Decay    : {args.weight_decay}\n")
                 f.write(f"Device                     : {args.device}\n")
             elif args.model == "lgbm":

@@ -1,11 +1,11 @@
 ==================================================
- {model_name.upper()} GRID SEARCH CV RESULTS REPORT
+LIGHTGBM GRID SEARCH CV RESULTS REPORT
 ==================================================
 
 CONFIGURATION SUMMARY:
-Folds (K) : {splits}
-Epochs    : {epochs}
-Total Combinations Tested: {len(combinations)}
+Folds (K) : 5
+Epochs    : 150
+Total Combinations Tested: 27
 
 DETAILED RUN LOG:
 -----------------

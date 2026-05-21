@@ -1,3 +1,4 @@
+import copy
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, Dataset, WeightedRandomSampler
@@ -202,6 +203,7 @@ class Trainer:
         )
 
         best_eval_loss = float("inf")
+        best_model_weights = None
         patience_counter = 0
 
         for epoch in range(num_epochs):
@@ -246,6 +248,11 @@ class Trainer:
             if eval_metrics["loss"] < best_eval_loss:
                 best_eval_loss = eval_metrics["loss"]
                 patience_counter = 0
+
+                best_model_weights = copy.deepcopy(pytorch_model.state_dict())
+                LOGGER.info(
+                    f"--> New best Validation Loss: {best_eval_loss:.4f}. Checkpoint saved in memory!"
+                )
             else:
                 patience_counter += 1
                 if patience_counter >= patience:
@@ -253,6 +260,12 @@ class Trainer:
                         f"Early stopping triggered after {epoch + 1} epochs."
                     )
                     break
+
+        if best_model_weights is not None:
+            LOGGER.info(
+                f"Restoring best model weights (Validation Loss: {best_eval_loss:.4f})"
+            )
+            pytorch_model.load_state_dict(best_model_weights)
 
     def get_predictions(
         self, use_test: bool = False

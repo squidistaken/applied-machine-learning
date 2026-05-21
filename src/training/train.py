@@ -152,7 +152,6 @@ def train_model(
         f.write("-----------------------------------------\n")
         for k, v in test_metrics.items():
             f.write(f"{k:<15} : {v:.6f}\n")
-        f.write("\nReport generated successfully.\n")
     LOGGER.info(f"Saved evaluation text report to: {metrics_path}")
 
 
