@@ -16,8 +16,8 @@ class ResNet(CNN):
         self,
         dataset: ChestXRayDatasetPyTorch,
         learning_rate: float = 0.001,
-        weight_decay: float = 0.0,
-    ):
+        weight_decay: float = 1e-4,
+    ) -> None:
         """
         Initialise the class.
 
@@ -26,7 +26,7 @@ class ResNet(CNN):
             learning_rate (float): The learning rate for training. Defaults to
                                    0.001.
             weight_decay (float): The weight decay (L2 penalty). Defaults to
-                                  0.0.
+                                  1e-4.
         """
         BaseModel.__init__(self, dataset)
         nn.Module.__init__(self)
@@ -34,7 +34,13 @@ class ResNet(CNN):
         self.num_classes = len(self.classes)
         self.resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 
-        # As our dataset is in grayscale, our first layer needs to accept 1 channel.
+        # To prevent overfitting, we freeze the pretrained core layers.
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+
+        # As our dataset is in grayscale, our first layer needs to accept 1
+        # channel. Replacing the layer automatically sets requires_grad=True
+        # for this layer.
         original_conv1 = self.resnet.conv1
         self.resnet.conv1 = nn.Conv2d(
             in_channels=1,
@@ -51,11 +57,14 @@ class ResNet(CNN):
                 original_conv1.weight.mean(dim=1, keepdim=True)
             )
 
+        # Replace the fully connected layer. Also sets requires_grad=True by
+        # default.
         num_ftrs = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(num_ftrs, self.num_classes)
         self.loss_function = nn.CrossEntropyLoss()
+        trainable_params = [p for p in self.parameters() if p.requires_grad]
         self.optimizer = optim.Adam(
-            self.parameters(), lr=learning_rate, weight_decay=weight_decay
+            trainable_params, lr=learning_rate, weight_decay=weight_decay
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

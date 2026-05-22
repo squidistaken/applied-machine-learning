@@ -48,6 +48,12 @@ class LightGBM(BaseModel):
             "verbose": -1,
             "random_state": 42,
             "class_weight": "balanced",
+            "lambda_l1": 0.1,
+            "lambda_l2": 0.2,
+            "feature_fraction": 0.8,
+            "bagging_fraction": 0.8,
+            "bagging_freq": 1,
+            "min_data_in_leaf": 20,
         }
 
         # Safely update with any additional custom parameters passed in
@@ -117,11 +123,9 @@ class LightGBM(BaseModel):
         valid_names = ["train"]
         callbacks = []
 
-        # Record evaluation metrics to construct the history array for plotting
         if evals_result is not None:
             callbacks.append(lgb.record_evaluation(evals_result))
 
-        # Dynamically resolve validation inputs from either a dataset object or raw arrays
         val_X, val_y = None, None
         lgb_val = None
 
@@ -136,14 +140,11 @@ class LightGBM(BaseModel):
             valid_sets.append(lgb_val)
             valid_names.append("val")
 
-            # Early stopping with parameter-driven patience logic
             if patience > 0:
                 callbacks.append(lgb.early_stopping(stopping_rounds=patience))
 
             callbacks.append(lgb.log_evaluation(period=10))
 
-            # Custom callback to compute and record validation classification metrics (Macro-F1, Precision, Recall)
-            # at each iteration to support plotting classification histories for LightGBM
             if val_X is not None and val_y is not None:
 
                 def record_custom_metrics(env):
