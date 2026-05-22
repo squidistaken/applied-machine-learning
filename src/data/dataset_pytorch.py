@@ -4,19 +4,16 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from src.constants import DATA_DIR, LOGGER, DEBUG
+from src.features.image_preprocessor import ImagePreprocessor
 
 
-# NOTE: We should abstract this class to account for LightGBM, or just wrap it.
-#       This is because LightGBM requires an np array as input. We are using
-#       PIL images for this one.
-class ChestXRayDataset(Dataset):
+class ChestXRayDatasetPyTorch(Dataset):
     """PyTorch Dataset Class for Chest X-Ray Images."""
 
     def __init__(
         self,
         split: str,
         augment: bool = False,
-        image_size: int = 224,
         transform: Optional[Callable] = None,
     ) -> None:
         """
@@ -26,8 +23,7 @@ class ChestXRayDataset(Dataset):
             split (str): The dataset split.
             augment (bool): Whether to apply data augmentations. Defaults to
                             False.
-            image_size (int): The edge size of the preprocessed square images.
-                              Defaults to 224.
+
             transform (callable, optional): The transform to be applied on a
                                             sample. If None, default transforms
                                             are used. Defaults to None.
@@ -35,12 +31,10 @@ class ChestXRayDataset(Dataset):
         if DEBUG:
             LOGGER.debug(f"Split: {split}")
             LOGGER.debug(f"Augment: {augment}")
-            LOGGER.debug(f"Image Size: {image_size}")
             LOGGER.debug(f"Transform: {transform}")
 
         self.split = split
         self.root_dir = DATA_DIR / "processed" / self.split
-        self.image_size = image_size
         self.transform = (
             transform if transform else self.compose_transforms(augment)
         )
@@ -73,16 +67,7 @@ class ChestXRayDataset(Dataset):
         transformations = []
 
         if augment:
-            transformations.extend(
-                [
-                    transforms.RandomAffine(
-                        degrees=5,
-                        scale=(0.9, 1.1),
-                        shear=5,
-                    ),
-                    transforms.ColorJitter(brightness=0.2, contrast=0.2),
-                ]
-            )
+            transformations.extend(ImagePreprocessor.get_augmentations())
 
         transformations.append(transforms.ToTensor())
 
@@ -101,7 +86,7 @@ class ChestXRayDataset(Dataset):
             class_index = self.class_to_idx[target_class]
             class_dir = self.root_dir / target_class
 
-            for img_path in class_dir.glob("*.pgm"):
+            for img_path in sorted(class_dir.glob("*.pgm")):
                 images.append((str(img_path), class_index))
 
         return images
@@ -114,7 +99,7 @@ class ChestXRayDataset(Dataset):
         """
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> tuple[Image.Image, int]:
+    def __getitem__(self, index: int) -> tuple[Image.Image, int]:
         """Get the sample at the given index of the dataset.
 
         Args:
@@ -124,7 +109,7 @@ class ChestXRayDataset(Dataset):
             tuple[Image.Image, int]: A sample containing the image and its
                                      corresponding target class.
         """
-        img_path, target = self.samples[idx]
+        img_path, target = self.samples[index]
 
         try:
             image = Image.open(img_path).convert("L")

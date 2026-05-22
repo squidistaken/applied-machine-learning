@@ -1,0 +1,77 @@
+==================================================
+RESNET GRID SEARCH CV RESULTS REPORT
+==================================================
+
+CONFIGURATION SUMMARY:
+Folds (K) : 5
+Epochs    : 10
+Total Combinations Tested: 12
+
+DETAILED RUN LOG:
+-----------------
+[01] Configuration: {'lr': 0.0001, 'batch_size': 16, 'weight_decay': 0.0}
+    -> Macro-F1 : 0.817220
+    -> Precision: 0.813100
+    -> Recall   : 0.824440
+
+[02] Configuration: {'lr': 0.0001, 'batch_size': 16, 'weight_decay': 0.0001}
+    -> Macro-F1 : 0.807840
+    -> Precision: 0.808360
+    -> Recall   : 0.817600
+
+[03] Configuration: {'lr': 0.0001, 'batch_size': 32, 'weight_decay': 0.0}
+    -> Macro-F1 : 0.809240
+    -> Precision: 0.816700
+    -> Recall   : 0.815660
+
+[04] Configuration: {'lr': 0.0001, 'batch_size': 32, 'weight_decay': 0.0001}
+    -> Macro-F1 : 0.812460
+    -> Precision: 0.809160
+    -> Recall   : 0.822860
+
+[05] Configuration: {'lr': 0.001, 'batch_size': 16, 'weight_decay': 0.0}
+    -> Macro-F1 : 0.780420
+    -> Precision: 0.781540
+    -> Recall   : 0.799060
+
+[06] Configuration: {'lr': 0.001, 'batch_size': 16, 'weight_decay': 0.0001}
+    -> Macro-F1 : 0.766140
+    -> Precision: 0.769180
+    -> Recall   : 0.775220
+
+[07] Configuration: {'lr': 0.001, 'batch_size': 32, 'weight_decay': 0.0}
+    -> Macro-F1 : 0.715620
+    -> Precision: 0.728780
+    -> Recall   : 0.747680
+
+[08] Configuration: {'lr': 0.001, 'batch_size': 32, 'weight_decay': 0.0001}
+    -> Macro-F1 : 0.759160
+    -> Precision: 0.765520
+    -> Recall   : 0.772780
+
+[09] Configuration: {'lr': 0.01, 'batch_size': 16, 'weight_decay': 0.0}
+    -> Macro-F1 : 0.451980
+    -> Precision: 0.527100
+    -> Recall   : 0.545140
+
+[10] Configuration: {'lr': 0.01, 'batch_size': 16, 'weight_decay': 0.0001}
+    -> Macro-F1 : 0.653300
+    -> Precision: 0.717760
+    -> Recall   : 0.679780
+
+[11] Configuration: {'lr': 0.01, 'batch_size': 32, 'weight_decay': 0.0}
+    -> Macro-F1 : 0.634214
+    -> Precision: 0.709602
+    -> Recall   : 0.652872
+
+[12] Configuration: {'lr': 0.01, 'batch_size': 32, 'weight_decay': 0.0001}
+    -> Macro-F1 : 0.701183
+    -> Precision: 0.706314
+    -> Recall   : 0.715369
+
+
+************************************************************
+BEST CONFIGURATION RETRIEVED:
+Configuration : {'lr': 0.0001, 'batch_size': 16, 'weight_decay': 0.0}
+Best Macro-F1 : 0.817220
+************************************************************
