@@ -1,5 +1,5 @@
 ==================================================
-CNN GRID SEARCH CV RESULTS REPORT
+ CNN GRID SEARCH CV RESULTS REPORT
 ==================================================
 
 CONFIGURATION SUMMARY:
@@ -10,68 +10,68 @@ Total Combinations Tested: 12
 DETAILED RUN LOG:
 -----------------
 [01] Configuration: {'lr': 0.0001, 'batch_size': 16, 'weight_decay': 0.0}
-     -> Macro-F1 : 0.365209
-     -> Precision: 0.363254
-     -> Recall   : 0.461093
+     -> Macro-F1 : 0.610826
+     -> Precision: 0.625697
+     -> Recall   : 0.634364
 
 [02] Configuration: {'lr': 0.0001, 'batch_size': 16, 'weight_decay': 0.0001}
-     -> Macro-F1 : 0.284143
-     -> Precision: 0.367859
-     -> Recall   : 0.426803
+     -> Macro-F1 : 0.619519
+     -> Precision: 0.623964
+     -> Recall   : 0.641534
 
 [03] Configuration: {'lr': 0.0001, 'batch_size': 32, 'weight_decay': 0.0}
-     -> Macro-F1 : 0.243542
-     -> Precision: 0.349938
-     -> Recall   : 0.404655
+     -> Macro-F1 : 0.609953
+     -> Precision: 0.618504
+     -> Recall   : 0.634128
 
 [04] Configuration: {'lr': 0.0001, 'batch_size': 32, 'weight_decay': 0.0001}
-     -> Macro-F1 : 0.211933
-     -> Precision: 0.360337
-     -> Recall   : 0.377143
+     -> Macro-F1 : 0.594791
+     -> Precision: 0.613823
+     -> Recall   : 0.619767
 
 [05] Configuration: {'lr': 0.001, 'batch_size': 16, 'weight_decay': 0.0}
-     -> Macro-F1 : 0.522952
-     -> Precision: 0.600624
-     -> Recall   : 0.587221
+     -> Macro-F1 : 0.537214
+     -> Precision: 0.587446
+     -> Recall   : 0.570424
 
 [06] Configuration: {'lr': 0.001, 'batch_size': 16, 'weight_decay': 0.0001}
-     -> Macro-F1 : 0.551470
-     -> Precision: 0.610136
-     -> Recall   : 0.609451
+     -> Macro-F1 : 0.543413
+     -> Precision: 0.575947
+     -> Recall   : 0.582132
 
 [07] Configuration: {'lr': 0.001, 'batch_size': 32, 'weight_decay': 0.0}
-     -> Macro-F1 : 0.542849
-     -> Precision: 0.597323
-     -> Recall   : 0.594690
+     -> Macro-F1 : 0.610192
+     -> Precision: 0.629572
+     -> Recall   : 0.647681
 
 [08] Configuration: {'lr': 0.001, 'batch_size': 32, 'weight_decay': 0.0001}
-     -> Macro-F1 : 0.495489
-     -> Precision: 0.598584
-     -> Recall   : 0.565030
+     -> Macro-F1 : 0.550172
+     -> Precision: 0.618472
+     -> Recall   : 0.572425
 
 [09] Configuration: {'lr': 0.01, 'batch_size': 16, 'weight_decay': 0.0}
-     -> Macro-F1 : 0.439341
-     -> Precision: 0.429009
-     -> Recall   : 0.537603
+     -> Macro-F1 : 0.510331
+     -> Precision: 0.526461
+     -> Recall   : 0.577325
 
 [10] Configuration: {'lr': 0.01, 'batch_size': 16, 'weight_decay': 0.0001}
-     -> Macro-F1 : 0.459763
-     -> Precision: 0.453788
-     -> Recall   : 0.543550
+     -> Macro-F1 : 0.482788
+     -> Precision: 0.619612
+     -> Recall   : 0.564373
 
 [11] Configuration: {'lr': 0.01, 'batch_size': 32, 'weight_decay': 0.0}
-     -> Macro-F1 : 0.500563
-     -> Precision: 0.560276
-     -> Recall   : 0.571950
+     -> Macro-F1 : 0.486517
+     -> Precision: 0.530443
+     -> Recall   : 0.557639
 
 [12] Configuration: {'lr': 0.01, 'batch_size': 32, 'weight_decay': 0.0001}
-     -> Macro-F1 : 0.563490
-     -> Precision: 0.597995
-     -> Recall   : 0.615979
+     -> Macro-F1 : 0.363027
+     -> Precision: 0.443884
+     -> Recall   : 0.457111
 
 
 ************************************************************
 BEST CONFIGURATION RETRIEVED:
-Configuration : {'lr': 0.01, 'batch_size': 32, 'weight_decay': 0.0001}
-Best Macro-F1 : 0.563490
+Configuration : {'lr': 0.0001, 'batch_size': 16, 'weight_decay': 0.0001}
+Best Macro-F1 : 0.619519
 ************************************************************
