@@ -1,5 +1,5 @@
 ==================================================
-LIGHTGBM GRID SEARCH CV RESULTS REPORT
+ LGBM GRID SEARCH CV RESULTS REPORT
 ==================================================
 
 CONFIGURATION SUMMARY:
@@ -10,143 +10,143 @@ Total Combinations Tested: 27
 DETAILED RUN LOG:
 -----------------
 [01] Configuration: {'lr': 0.01, 'num_leaves': 15, 'max_depth': 4}
-     -> Macro-F1 : 0.692839
-     -> Precision: 0.747328
-     -> Recall   : 0.689933
+     -> Macro-F1 : 0.701556
+     -> Precision: 0.756254
+     -> Recall   : 0.699534
 
 [02] Configuration: {'lr': 0.01, 'num_leaves': 15, 'max_depth': 6}
-     -> Macro-F1 : 0.699693
-     -> Precision: 0.753013
-     -> Recall   : 0.694474
+     -> Macro-F1 : 0.703264
+     -> Precision: 0.759151
+     -> Recall   : 0.698879
 
 [03] Configuration: {'lr': 0.01, 'num_leaves': 15, 'max_depth': -1}
-     -> Macro-F1 : 0.698557
-     -> Precision: 0.751985
-     -> Recall   : 0.693599
+     -> Macro-F1 : 0.706148
+     -> Precision: 0.761652
+     -> Recall   : 0.701617
 
 [04] Configuration: {'lr': 0.01, 'num_leaves': 31, 'max_depth': 4}
-     -> Macro-F1 : 0.695874
-     -> Precision: 0.749617
-     -> Recall   : 0.693265
+     -> Macro-F1 : 0.702853
+     -> Precision: 0.757140
+     -> Recall   : 0.700858
 
 [05] Configuration: {'lr': 0.01, 'num_leaves': 31, 'max_depth': 6}
-     -> Macro-F1 : 0.709030
-     -> Precision: 0.756332
-     -> Recall   : 0.705813
+     -> Macro-F1 : 0.714910
+     -> Precision: 0.765073
+     -> Recall   : 0.711159
 
 [06] Configuration: {'lr': 0.01, 'num_leaves': 31, 'max_depth': -1}
-     -> Macro-F1 : 0.709216
-     -> Precision: 0.757856
-     -> Recall   : 0.705152
+     -> Macro-F1 : 0.715414
+     -> Precision: 0.766922
+     -> Recall   : 0.711221
 
 [07] Configuration: {'lr': 0.01, 'num_leaves': 63, 'max_depth': 4}
-     -> Macro-F1 : 0.695874
-     -> Precision: 0.749617
-     -> Recall   : 0.693265
+     -> Macro-F1 : 0.702853
+     -> Precision: 0.757140
+     -> Recall   : 0.700858
 
 [08] Configuration: {'lr': 0.01, 'num_leaves': 63, 'max_depth': 6}
-     -> Macro-F1 : 0.706886
-     -> Precision: 0.753047
-     -> Recall   : 0.704588
+     -> Macro-F1 : 0.716954
+     -> Precision: 0.768936
+     -> Recall   : 0.712868
 
 [09] Configuration: {'lr': 0.01, 'num_leaves': 63, 'max_depth': -1}
-     -> Macro-F1 : 0.708768
-     -> Precision: 0.753471
-     -> Recall   : 0.706207
+     -> Macro-F1 : 0.717833
+     -> Precision: 0.768965
+     -> Recall   : 0.713825
 
 [10] Configuration: {'lr': 0.05, 'num_leaves': 15, 'max_depth': 4}
-     -> Macro-F1 : 0.758703
-     -> Precision: 0.780009
-     -> Recall   : 0.755260
+     -> Macro-F1 : 0.756353
+     -> Precision: 0.776815
+     -> Recall   : 0.753984
 
 [11] Configuration: {'lr': 0.05, 'num_leaves': 15, 'max_depth': 6}
-     -> Macro-F1 : 0.758560
-     -> Precision: 0.779426
-     -> Recall   : 0.754866
+     -> Macro-F1 : 0.759497
+     -> Precision: 0.780442
+     -> Recall   : 0.756695
 
 [12] Configuration: {'lr': 0.05, 'num_leaves': 15, 'max_depth': -1}
-     -> Macro-F1 : 0.756856
-     -> Precision: 0.777602
-     -> Recall   : 0.753497
+     -> Macro-F1 : 0.759217
+     -> Precision: 0.781677
+     -> Recall   : 0.756028
 
 [13] Configuration: {'lr': 0.05, 'num_leaves': 31, 'max_depth': 4}
-     -> Macro-F1 : 0.756383
-     -> Precision: 0.778025
-     -> Recall   : 0.752932
+     -> Macro-F1 : 0.759067
+     -> Precision: 0.780175
+     -> Recall   : 0.756132
 
 [14] Configuration: {'lr': 0.05, 'num_leaves': 31, 'max_depth': 6}
-     -> Macro-F1 : 0.756903
-     -> Precision: 0.778691
-     -> Recall   : 0.753413
+     -> Macro-F1 : 0.760978
+     -> Precision: 0.785835
+     -> Recall   : 0.757255
 
 [15] Configuration: {'lr': 0.05, 'num_leaves': 31, 'max_depth': -1}
-     -> Macro-F1 : 0.756922
-     -> Precision: 0.779991
-     -> Recall   : 0.753080
+     -> Macro-F1 : 0.757570
+     -> Precision: 0.782448
+     -> Recall   : 0.753525
 
 [16] Configuration: {'lr': 0.05, 'num_leaves': 63, 'max_depth': 4}
-     -> Macro-F1 : 0.756383
-     -> Precision: 0.778025
-     -> Recall   : 0.752932
+     -> Macro-F1 : 0.759067
+     -> Precision: 0.780175
+     -> Recall   : 0.756132
 
 [17] Configuration: {'lr': 0.05, 'num_leaves': 63, 'max_depth': 6}
-     -> Macro-F1 : 0.757098
-     -> Precision: 0.780807
-     -> Recall   : 0.752943
+     -> Macro-F1 : 0.760543
+     -> Precision: 0.785107
+     -> Recall   : 0.755776
 
 [18] Configuration: {'lr': 0.05, 'num_leaves': 63, 'max_depth': -1}
-     -> Macro-F1 : 0.750406
-     -> Precision: 0.776228
-     -> Recall   : 0.747242
+     -> Macro-F1 : 0.749567
+     -> Precision: 0.777047
+     -> Recall   : 0.746504
 
 [19] Configuration: {'lr': 0.1, 'num_leaves': 15, 'max_depth': 4}
-     -> Macro-F1 : 0.759631
-     -> Precision: 0.779888
-     -> Recall   : 0.756479
+     -> Macro-F1 : 0.760305
+     -> Precision: 0.777443
+     -> Recall   : 0.758492
 
 [20] Configuration: {'lr': 0.1, 'num_leaves': 15, 'max_depth': 6}
-     -> Macro-F1 : 0.759539
-     -> Precision: 0.775469
-     -> Recall   : 0.756621
+     -> Macro-F1 : 0.760962
+     -> Precision: 0.778074
+     -> Recall   : 0.757553
 
 [21] Configuration: {'lr': 0.1, 'num_leaves': 15, 'max_depth': -1}
-     -> Macro-F1 : 0.765418
-     -> Precision: 0.783860
-     -> Recall   : 0.761653
+     -> Macro-F1 : 0.766126
+     -> Precision: 0.783716
+     -> Recall   : 0.762437
 
 [22] Configuration: {'lr': 0.1, 'num_leaves': 31, 'max_depth': 4}
-     -> Macro-F1 : 0.766418
-     -> Precision: 0.785699
-     -> Recall   : 0.762453
+     -> Macro-F1 : 0.760557
+     -> Precision: 0.779264
+     -> Recall   : 0.757872
 
 [23] Configuration: {'lr': 0.1, 'num_leaves': 31, 'max_depth': 6}
-     -> Macro-F1 : 0.756893
-     -> Precision: 0.778568
-     -> Recall   : 0.753028
+     -> Macro-F1 : 0.758934
+     -> Precision: 0.779644
+     -> Recall   : 0.755327
 
 [24] Configuration: {'lr': 0.1, 'num_leaves': 31, 'max_depth': -1}
-     -> Macro-F1 : 0.756672
-     -> Precision: 0.778373
-     -> Recall   : 0.753156
+     -> Macro-F1 : 0.759739
+     -> Precision: 0.781793
+     -> Recall   : 0.755308
 
 [25] Configuration: {'lr': 0.1, 'num_leaves': 63, 'max_depth': 4}
-     -> Macro-F1 : 0.766418
-     -> Precision: 0.785699
-     -> Recall   : 0.762453
+     -> Macro-F1 : 0.760557
+     -> Precision: 0.779264
+     -> Recall   : 0.757872
 
 [26] Configuration: {'lr': 0.1, 'num_leaves': 63, 'max_depth': 6}
-     -> Macro-F1 : 0.754391
-     -> Precision: 0.776641
-     -> Recall   : 0.751068
+     -> Macro-F1 : 0.756065
+     -> Precision: 0.778113
+     -> Recall   : 0.752404
 
 [27] Configuration: {'lr': 0.1, 'num_leaves': 63, 'max_depth': -1}
-     -> Macro-F1 : 0.747806
-     -> Precision: 0.775508
-     -> Recall   : 0.744429
+     -> Macro-F1 : 0.749195
+     -> Precision: 0.778849
+     -> Recall   : 0.746660
 
 
 ************************************************************
 BEST CONFIGURATION RETRIEVED:
-Configuration : {'lr': 0.1, 'num_leaves': 31, 'max_depth': 4}
-Best Macro-F1 : 0.766418
+Configuration : {'lr': 0.1, 'num_leaves': 15, 'max_depth': -1}
+Best Macro-F1 : 0.766126
 ************************************************************

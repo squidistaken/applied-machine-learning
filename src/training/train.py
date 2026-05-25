@@ -113,6 +113,7 @@ def train_model(
 
     LOGGER.info("Starting training...")
     trainer.train(num_epochs=epochs, learning_rate=lr, patience=patience)
+    final_epoch = len(trainer.history["train_loss"])
     LOGGER.info("Evaluating validation dataset performance...")
     val_metrics = trainer.evaluate(use_test=False)
     LOGGER.info(f"Validation Metrics: {val_metrics}")
@@ -133,7 +134,8 @@ def train_model(
         f.write("HYPERPARAMETERS:\n")
         f.write("----------------\n")
         f.write(f"Learning Rate: {lr}\n")
-        f.write(f"Epochs: {epochs}\n")
+        f.write(f"Max Epochs: {epochs}\n")
+        f.write(f"Final Epoch: {final_epoch}\n")
         if model_name in ["cnn", "resnet"]:
             f.write(f"Batch Size: {batch_size}\n")
             f.write(f"Weight Decay: {weight_decay}\n")
