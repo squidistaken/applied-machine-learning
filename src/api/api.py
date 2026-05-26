@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel #NOTE this is not our local base model class, will this give issues?
 from typing import Optional, Dict, Any
+from src.api.schema import ModelType, ModelObject, ModelMetrics
+
 
 app = FastAPI(
     title="Chest X-ray Classification API",
@@ -71,32 +73,30 @@ async def get_model_info(model_name: str):
 
 
 
-class TrainRequest(BaseModel):
+class TrainRequest(BaseModel): 
     model_name: str
     epochs: Optional[int] = 10
-    batch_size: Optional[int] = 32
     learning_rate: Optional[float] = 0.001
 
 
-@app.post("/train")
+@app.post("/train/")
 async def train_model(request: TrainRequest):
     """
     Request model training.
+    call the training code from src/training/train.py.
     """
-    # call the training code from src/training/train.py.
 
     return {
         "message": "Training request received",
         "model_name": request.model_name,
         "epochs": request.epochs,
-        "batch_size": request.batch_size,
         "learning_rate": request.learning_rate,
-        "status": ""
+        "status": "" #TODO implement status updates using Trainingstatus schema
     }
 
 
 
-@app.post("/predict")
+@app.post("/predict/")
 async def predict_image(
     model_name: str = "cnn",
     file: UploadFile = File(...),#FIXME I don't think this is a very intuitive way to do this 
@@ -109,7 +109,6 @@ async def predict_image(
     3. Load the selected model.
     4. Return the predicted class and probabilities.
     """
-
     allowed_extensions = ["png", "jpg", "jpeg"]
 
     filename = file.filename 
@@ -121,6 +120,7 @@ async def predict_image(
             detail="Invalid file type. Please upload a PNG, JPG, or JPEG image.",
         )
 
+    # TODO implement separate processing based on the model
     return {
         "message": "Image received successfully",
         "filename": filename,
