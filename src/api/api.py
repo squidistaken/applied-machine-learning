@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel #NOTE this is not our local base model class, will this give issues?
 from typing import Optional, Dict, Any
 
 app = FastAPI(
@@ -20,19 +20,9 @@ async def root():
             "/models",
             "/train",
             "/predict",
-            "/metrics",
+            "/metrics"
         ],
     }
-
-
-# TODO get to retrieve model
-# TODO post to request to train a model
-
-# TODO post to classify an image: returns result with metrics
-# TODO get model metrics (confusion matrix and model history)
-
-
-
 
 @app.get("/health")
 async def health_check():
@@ -51,8 +41,7 @@ async def get_available_models():
         "models": [
             "lightgbm",
             "cnn",
-            "resnet",
-            "pretrained",
+            "resnet"
         ]
     }
 
@@ -66,8 +55,7 @@ async def get_model_info(model_name: str):
     available_models = {
         "lightgbm": "LightGBM model trained on extracted image features.",
         "cnn": "Custom convolutional neural network for chest X-ray classification.",
-        "resnet": "ResNet-based deep learning model.",
-        "pretrained": "Pretrained transfer learning model.",
+        "resnet": "ResNet-based deep learning model."
     }
 
     if model_name not in available_models:
@@ -94,8 +82,8 @@ class TrainRequest(BaseModel):
 async def train_model(request: TrainRequest):
     """
     Request model training.
-    call the training code from src/training/train.py.
     """
+    # call the training code from src/training/train.py.
 
     return {
         "message": "Training request received",
@@ -103,15 +91,15 @@ async def train_model(request: TrainRequest):
         "epochs": request.epochs,
         "batch_size": request.batch_size,
         "learning_rate": request.learning_rate,
-        "status": "",
+        "status": ""
     }
 
 
 
 @app.post("/predict")
 async def predict_image(
-    model_name: str = "lightgbm",
-    file: UploadFile = File(...),
+    model_name: str = "cnn",
+    file: UploadFile = File(...),#FIXME I don't think this is a very intuitive way to do this 
 ):
     """
     Classify a chest X-ray image.
@@ -124,7 +112,7 @@ async def predict_image(
 
     allowed_extensions = ["png", "jpg", "jpeg"]
 
-    filename = file.filename
+    filename = file.filename 
     extension = filename.split(".")[-1].lower()
 
     if extension not in allowed_extensions:
@@ -137,7 +125,7 @@ async def predict_image(
         "message": "Image received successfully",
         "filename": filename,
         "model_name": model_name,
-        "prediction": "not implemented yet",
+        "prediction": "not implemented yet", #TODO actually implement this I suppose?
         "class_probabilities": {
             "BACTERIA": None,
             "NORMAL": None,
@@ -147,15 +135,14 @@ async def predict_image(
 
 
 @app.get("/metrics")
-async def get_metrics(model_name: str = "lightgbm"):
+async def get_metrics(model_name: str = "cnn"):
     """
     Retrieve model evaluation metrics.
     """
 
     return {
-        "model_name": model_name,
+        "model_name": model_name, #TODO implement/fix this?
         "metrics": {
-            "accuracy": None,
             "precision": None,
             "recall": None,
             "macro_f1": None,
