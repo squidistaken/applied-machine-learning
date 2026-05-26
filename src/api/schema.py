@@ -67,10 +67,23 @@ class TrainingStatus(str, Enum):
     FAILED = "failed"
 
 
+class TrainRequest(BaseSchema):
+    """Schema class for training request parameters."""
+
+    model_name: ModelType
+    epochs: Optional[int] = Field(None, description="Number of training epochs")
+    batch_size: int = Field(32, description="Batch size (PyTorch only)")
+    learning_rate: Optional[float] = Field(None, description="Learning rate")
+    patience: int = Field(3, description="Early stopping patience")
+    num_leaves: int = Field(31, description="Number of leaves (LightGBM only)")
+    max_depth: int = Field(-1, description="Max depth (LightGBM only)")
+    weight_decay: float = Field(0.0, description="Weight decay (L2 penalty)")
+
+
 class ModelMetrics(BaseSchema):
     """Schema class for model evaluation metrics."""
 
-    loss: float = Field(..., description="Evaluation loss")
+    loss: Optional[float] = Field(None, description="Evaluation loss")
     macro_f1: float = Field(
         ..., ge=0.0, le=1.0, description="Macro-averaged F1 score"
     )
