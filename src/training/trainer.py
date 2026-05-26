@@ -2,10 +2,12 @@ import copy
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset, Dataset, WeightedRandomSampler
+from torch.utils.tensorboard import SummaryWriter
 from typing import Optional, Union, cast
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from datetime import datetime
 from sklearn.metrics import (
     f1_score,
     precision_score,
@@ -16,7 +18,9 @@ from sklearn.metrics import (
 from src.models.base import BaseModel
 from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
-from src.constants import LOGGER, DEVICE
+from src.constants import LOGGER, DEVICE, LOGS_DIR
+import torchvision
+
 
 # Define consistent plotting style for "aesthetic."
 plt.style.use("seaborn-v0_8-dark-palette")
@@ -71,6 +75,14 @@ class Trainer:
         self.history: dict[str, list] = {}
         self.reset_history()
         self.is_pytorch = isinstance(self.model, nn.Module)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        model_name = self.model.__class__.__name__
+        self.tb_dir = LOGS_DIR / "tensorboard" / f"{model_name}_{timestamp}"
+        self.writer = SummaryWriter(log_dir=str(self.tb_dir))
+        LOGGER.info(
+            f"TensorBoard initialized. Logs will be saved to: {self.tb_dir}"
+        )
 
         if self.is_pytorch:
             self.device = torch.device(device)
@@ -194,6 +206,46 @@ class Trainer:
                         self.history["eval_recall"] = evals_result["val"][
                             "recall"
                         ]
+
+                # Log LightGBM history to TensorBoard
+                epochs_run = len(self.history.get("train_loss", []))
+                for i in range(epochs_run):
+                    if "train_loss" in self.history and i < len(
+                        self.history["train_loss"]
+                    ):
+                        self.writer.add_scalar(
+                            "Loss/train", self.history["train_loss"][i], i
+                        )
+                    if "eval_loss" in self.history and i < len(
+                        self.history["eval_loss"]
+                    ):
+                        self.writer.add_scalar(
+                            "Loss/eval", self.history["eval_loss"][i], i
+                        )
+                    if "eval_macro_f1" in self.history and i < len(
+                        self.history["eval_macro_f1"]
+                    ):
+                        self.writer.add_scalar(
+                            "Metrics/macro_f1",
+                            self.history["eval_macro_f1"][i],
+                            i,
+                        )
+                    if "eval_precision" in self.history and i < len(
+                        self.history["eval_precision"]
+                    ):
+                        self.writer.add_scalar(
+                            "Metrics/precision",
+                            self.history["eval_precision"][i],
+                            i,
+                        )
+                    if "eval_recall" in self.history and i < len(
+                        self.history["eval_recall"]
+                    ):
+                        self.writer.add_scalar(
+                            "Metrics/recall", self.history["eval_recall"][i], i
+                        )
+
+            self.writer.close()
             return
 
         pytorch_model = cast(nn.Module, self.model)
@@ -205,6 +257,16 @@ class Trainer:
         best_eval_loss = float("inf")
         best_model_weights = None
         patience_counter = 0
+
+        try:
+            dataiter = iter(self.train_loader)
+            images, _ = next(dataiter)
+            img_grid = torchvision.utils.make_grid(images[:16], normalize=True)
+            self.writer.add_image(
+                "Chest_X-Ray_Training_Sample", img_grid, global_step=0
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not log images to TensorBoard: {e}")
 
         for epoch in range(num_epochs):
             pytorch_model.train()
@@ -238,6 +300,19 @@ class Trainer:
             self.history["eval_precision"].append(eval_metrics["precision"])
             self.history["eval_recall"].append(eval_metrics["recall"])
 
+            # TensorBoard Logging for PyTorch
+            self.writer.add_scalar("Loss/train", avg_train_loss, epoch)
+            self.writer.add_scalar("Loss/eval", eval_metrics["loss"], epoch)
+            self.writer.add_scalar(
+                "Metrics/macro_f1", eval_metrics["macro_f1"], epoch
+            )
+            self.writer.add_scalar(
+                "Metrics/precision", eval_metrics["precision"], epoch
+            )
+            self.writer.add_scalar(
+                "Metrics/recall", eval_metrics["recall"], epoch
+            )
+
             LOGGER.info(
                 f"Epoch {epoch + 1}/{num_epochs} | "
                 f"Train Loss: {avg_train_loss:.4f} | "
@@ -266,6 +341,8 @@ class Trainer:
                 f"Restoring best model weights (Validation Loss: {best_eval_loss:.4f})"
             )
             pytorch_model.load_state_dict(best_model_weights)
+
+        self.writer.close()
 
     def get_predictions(
         self, use_test: bool = False
@@ -508,6 +585,11 @@ class Trainer:
         disp.plot(cmap="Blues", ax=ax, xticks_rotation="horizontal")
         plt.title("Confusion Matrix")
         plt.tight_layout()
+
+        if hasattr(self, "writer") and self.writer is not None:
+            self.writer.add_figure(
+                "Evaluation/Confusion_Matrix", fig, global_step=0
+            )
 
         if save_path:
             plt.savefig(save_path)
