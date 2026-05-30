@@ -12,7 +12,8 @@ class mock_dataset(Dataset):
 
 @pytest.fixture
 def model():
-    return CNN()
+    dataset = mock_dataset()
+    return CNN(dataset)
 
 @pytest.fixture
 def dataloader():
