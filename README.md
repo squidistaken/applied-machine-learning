@@ -38,13 +38,14 @@ uv run -m src.features.preprocess_data [--pipeline] [--lgb-size]
 ```bash
 uv run -m src.training.train --model <model_name> [options]
 ```
- * `--model`: The model architecture to train: `cnn`, `resnet`, `lgbm`. (Required)
+ * `--model`: The model architecture to train: `cnn`, `resnet`, `lgbm`.
  * `--epochs`: Number of training epochs. Defaults dynamically.
  * `--batch-size`: Batch size for PyTorch models. Defaults to 32.
  * `--lr`: Learning rate. Defaults dynamically.
  * `--patience`: Epochs to wait for improvement before early stopping. Defaults to 3.
  * `--num-leaves`: Number of leaves for LightGBM. Defaults to 31.
  * `--max-depth`: Maximum tree depth for LightGBM. Defaults to -1.
+ * ``--weight-decay`: Weight decay for PyTorch models. Defaults to 0.0.
  * `--device`: Device for PyTorch models (`cuda`, `mps`, `cpu`). Defaults to auto-detection.
 
 ### Cross-Validation
@@ -52,12 +53,20 @@ uv run -m src.training.train --model <model_name> [options]
 ```bash
 uv run -m src.training.cv --model <model_name> [options]
 ```
- * `--model`: The model to cross-validate: `cnn`, `resnet`, `lgbm`. (Required)
+ * `--model`: The model to cross-validate: `cnn`, `resnet`, `lgbm`.
  * `--splits`: Number of folds (k). Defaults to 5.
  * `--epochs`: Number of training epochs. Defaults dynamically.
+ * ``-batch-size`: Batch size for PyTorch models. Defaults to 32.
  * `--lr`: Learning rate. Defaults dynamically.
+ * `--weight-decay`: Weight decay for PyTorch models. Defaults to 0.0.
  * `--device`: Device for PyTorch models (`cuda`, `mps`, `cpu`). Defaults to auto-detection.
  * `--grid-search`: Enable hyperparameter grid search cross-validation.
+
+### Tensorboard Dashboard
+
+```bash
+uv run tensorboard --logdir logs/tensorboard
+```
 
 ### Running Tests
 
