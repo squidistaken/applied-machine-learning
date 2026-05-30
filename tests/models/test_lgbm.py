@@ -5,10 +5,7 @@ import pytest
 from src.models.lgbm import LightGBM
 import lightgbm as lgb
 from torch.utils.data import Dataset
-
-class mock_dataset(Dataset):
-    def __init__(self):
-        self.classes = ["normal", "bacterial", "viral"]
+from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
 
 
 @pytest.fixture
@@ -22,8 +19,7 @@ def sample_data():
 
 @pytest.fixture
 def model():
-    dataset = mock_dataset()
-    return LightGBM(dataset)
+    return LightGBM(ChestXRayDatasetLightGBM(split="train"))
 
 def test_lgmb_initialization(model):
     assert len(model.params) > 0

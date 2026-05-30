@@ -3,22 +3,18 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.models.cnn import CNN
+from src.data.dataset_pytorch import ChestXRayDatasetPyTorch 
 from torch.utils.data import Dataset
-
-class mock_dataset(Dataset):
-    def __init__(self):
-        self.classes = ["normal", "bacterial", "viral"]
 
 
 @pytest.fixture
 def model():
-    dataset = mock_dataset()
-    return CNN(dataset)
+    return CNN(ChestXRayDatasetPyTorch(split="train"))
 
 @pytest.fixture
 def dataloader():
     images = torch.randn(16, 1, 128, 128)
-    labels = torch.randint(0, 2, (16,))
+    labels = torch.randint(0, 3, (16,))
 
     dataset = TensorDataset(images, labels)
 
