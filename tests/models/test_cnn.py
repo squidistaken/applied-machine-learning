@@ -3,15 +3,16 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.models.cnn import CNN
+from torch.utils.data import Dataset
 
-class mock_dataset:
-    classes = ["normal", "bacterial", "viral"]
+class mock_dataset(Dataset):
+    def __init__(self):
+        self.classes = ["normal", "bacterial", "viral"]
 
 
 @pytest.fixture
 def model():
-    dataset = mock_dataset()
-    return CNN(dataset)
+    return CNN()
 
 @pytest.fixture
 def dataloader():

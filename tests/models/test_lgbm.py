@@ -4,9 +4,12 @@ import pytest
 
 from src.models.lgbm import LightGBM
 import lightgbm as lgb
+from torch.utils.data import Dataset
 
-class mock_dataset:
-    classes = ["normal", "bacterial", "viral"]
+class mock_dataset(Dataset):
+    def __init__(self):
+        self.classes = ["normal", "bacterial", "viral"]
+
 
 @pytest.fixture
 def sample_data():
