@@ -98,28 +98,31 @@ async def get_models():
 @app.get("/models/{model_name}", response_model=ModelObject)
 async def get_model(model: ModelType) -> ModelObject:
     """
-    Retrieve basic information about a specific model.
+        Retrieve basic information about a specific model.
+    <<<<<<< HEAD
 
-    Input:
+        Input:
 
-        model_name: The model, chosen from available model names found in the '/models' endpoint
+            model_name: The model, chosen from available model names found in the '/models' endpoint
 
-    Response details:
+        Response details:
 
-        model_type: The model
+            model_type: The model
 
-        status: The model's training status
+            status: The model's training status
 
-        model_path: Local path to trained model, returns None if training is not complete
+            model_path: Local path to trained model, returns None if training is not complete
 
-        hyperparameters: The hyperparameters corresponding to the trained model
+            hyperparameters: The hyperparameters corresponding to the trained model
 
-        metrics: Model evaluation metrics
-            loss:       Evaluation loss of the model
-            macro_f1:   Macro-averaged F1 score
-            precision:  Macro-averaged precision
-            recall:     Macro-averaged recall
+            metrics: Model evaluation metrics
+                loss:       Evaluation loss of the model
+                macro_f1:   Macro-averaged F1 score
+                precision:  Macro-averaged precision
+                recall:     Macro-averaged recall
 
+    =======
+    >>>>>>> fastAPI
     """
     model_filenames = {
         ModelType.CNN: "CNN.pt",
@@ -149,45 +152,49 @@ async def train_model(
     request: TrainRequest, background_tasks: BackgroundTasks
 ) -> dict[str, Any]:
     """
-    Request model training to run in the background.
+    <<<<<<< HEAD
+        Request model training to run in the background.
 
-    Input:
+        Input:
 
-        model_name(string): The model to train, chosen from available model names found in the '/models' endpoint
+            model_name(string): The model to train, chosen from available model names found in the '/models' endpoint
 
-        epochs(int | None): The number of epochs for training loop; If unspecified, default values per model:
-            cnn: 20
-            resnet: 10
-            lgbm: 100
+            epochs(int | None): The number of epochs for training loop; If unspecified, default values per model:
+                cnn: 20
+                resnet: 10
+                lgbm: 100
 
-        batch_size(int): The batch size for the PyTorch models (cnn and resnet)
+            batch_size(int): The batch size for the PyTorch models (cnn and resnet)
 
-        learning_rate(float | None): The learning rate for training; If unspecified, default values per model:
-            cnn: 0.0001
-            resnet: 0.0001
-            lgbm: 0.1
+            learning_rate(float | None): The learning rate for training; If unspecified, default values per model:
+                cnn: 0.0001
+                resnet: 0.0001
+                lgbm: 0.1
 
-        patience(int): The patience for early stopping
+            patience(int): The patience for early stopping
 
-        num_leaves(int): The number of leaves for the LightGBM tree
+            num_leaves(int): The number of leaves for the LightGBM tree
 
-        max_depth(int):  The maximum depth for the LightGBM tree (a value of -1 indicates no max)
+            max_depth(int):  The maximum depth for the LightGBM tree (a value of -1 indicates no max)
 
-        weight_decay(float): The weight decay (L2 penalty)
+            weight_decay(float): The weight decay (L2 penalty)
 
-    Response Details:
+        Response Details:
 
-        model_name: The model
+            model_name: The model
 
-        epochs: The number of epochs for training loop
+            epochs: The number of epochs for training loop
 
-        batch_size: The batch size for the PyTorch models (cnn and resnet)
+            batch_size: The batch size for the PyTorch models (cnn and resnet)
 
-        learning_rate: The learning rate for training
-        
-        status: The training status
+            learning_rate: The learning rate for training
+
+            status: The training status
 
 
+    =======
+        Request model training.
+    >>>>>>> fastAPI
     """
     epochs = request.epochs
 
@@ -238,24 +245,32 @@ async def predict_image(
     file: UploadFile = File(...),
 ) -> ImageResults:
     """
-    Classify a chest X-ray image.
+        Classify a chest X-ray image.
+    <<<<<<< HEAD
 
-    Input: 
-    
-        model_name: The model, chosen from available model names found in the '/models' endpoint
-    
-        file: The xray image the model should clasify. 
-            Accepted image types: png, jpg, jpeg, pmg 
-            
-    Response Details:
+        Input:
 
-        filename: The uploaded file
-        
-        model_used: The model used for the prediction
-        
-        predicted class: The predicted class for the uploaded image
-        
-        probabilities: The model's predicted likelihood that the uploaded image belongs to a given class
+            model_name: The model, chosen from available model names found in the '/models' endpoint
+
+            file: The xray image the model should clasify.
+                Accepted image types: png, jpg, jpeg, pmg
+
+        Response Details:
+
+            filename: The uploaded file
+
+            model_used: The model used for the prediction
+
+            predicted class: The predicted class for the uploaded image
+
+            probabilities: The model's predicted likelihood that the uploaded image belongs to a given class
+    =======
+        This should:
+        1. Read the uploaded image.
+        2. Preprocess it.
+        3. Load the selected model.
+        4. Return the predicted class and probabilities.
+    >>>>>>> fastAPI
     """
     if not file.filename:
         raise HTTPException(
@@ -360,16 +375,19 @@ async def predict_image(
 @app.get("/metrics")
 async def get_metrics(model_name: ModelType = ModelType.CNN) -> ModelMetrics:
     """
-    Retrieve model evaluation metrics.
+        Retrieve model evaluation metrics.
+    <<<<<<< HEAD
 
-        loss:       Evaluation loss of the model
-        
-        macro_f1:   Macro-averaged F1 score
-        
-        precision:  Macro-averaged precision
-        
-        recall:     Macro-averaged recall
+            loss:       Evaluation loss of the model
 
+            macro_f1:   Macro-averaged F1 score
+
+            precision:  Macro-averaged precision
+
+            recall:     Macro-averaged recall
+
+    =======
+    >>>>>>> fastAPI
     """
     metrics_data, _ = parse_evaluation_report(model_name)
     if metrics_data is None:
