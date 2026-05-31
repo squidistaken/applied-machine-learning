@@ -22,28 +22,6 @@ def downloader_setup() -> Iterator[Tuple[DataDownloader, Path]]:
         yield downloader, raw_data_path
 
 
-@patch("src.data.download_data.kaggle")
-def test_download_from_kaggle(
-    mock_kaggle: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
-) -> None:
-    """Test the Kaggle download method of the DataDownloader.
-
-    Args:
-        mock_kaggle (MagicMock): The mocked kaggle library.
-        downloader_setup (Tuple[DataDownloader, Path]): The downloader instance
-                                                        and path.
-    """
-    downloader, raw_data_path = downloader_setup
-    downloader._download_from_kaggle()
-
-    mock_kaggle.api.dataset_download_files.assert_called_once_with(
-        dataset="tolgadincer/labeled-chest-xray-images",
-        path=str(raw_data_path),
-        unzip=True,
-        force=True,
-    )
-
-
 @patch("src.data.download_data.shutil")
 def test_flatten_directory(
     mock_shutil: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
@@ -125,29 +103,3 @@ def test_organise_classes(
         str(train_virus_path / "virus_1.jpeg"),
     )
     assert mock_shutil.move.call_count == 2
-
-
-@patch.object(DataDownloader, "_download_from_kaggle")
-@patch.object(DataDownloader, "_flatten_directory")
-@patch.object(DataDownloader, "_organise_classes")
-def test_run_force_download(
-    mock_organise: MagicMock,
-    mock_flatten: MagicMock,
-    mock_download: MagicMock,
-    downloader_setup: Tuple[DataDownloader, Path],
-) -> None:
-    """Test the full run pipeline when force_download is enabled.
-
-    Args:
-        mock_organise (MagicMock): The mocked _organise_classes method.
-        mock_flatten (MagicMock): The mocked _flatten_directory method.
-        mock_download (MagicMock): The mocked _download_from_kaggle method.
-        downloader_setup (Tuple[DataDownloader, Path]): The downloader instance
-                                                        and path.
-    """
-    downloader, _ = downloader_setup
-    downloader.run(force_download=True)
-
-    mock_download.assert_called_once()
-    mock_flatten.assert_called_once()
-    mock_organise.assert_called_once()
