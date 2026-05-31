@@ -1,7 +1,10 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from src.models.lgbm import LightGBM
+import lightgbm as lgb
+from torch.utils.data import Dataset
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
 
 
@@ -14,16 +17,13 @@ def sample_data():
 
     return X, y
 
-
 @pytest.fixture
 def model():
     return LightGBM(ChestXRayDatasetLightGBM(split="train"))
 
-
 def test_lgmb_initialization(model):
     assert len(model.params) > 0
     assert model.params["num_classes"] == 3
-
 
 def test_lgbm_backward_pass(model):
     X, y = sample_data()
@@ -31,7 +31,6 @@ def test_lgbm_backward_pass(model):
     model.backward_pass(x_train=X, y_train=y, num_boost_round=5)
 
     assert model.model is not None
-
 
 def test_lgbm_forward_pass(model, sample_data):
     X, y = sample_data()
@@ -59,3 +58,5 @@ def test_lgbm_eval(model, sample_data):
     assert "macro_f1" in metrics
     assert "precision" in metrics
     assert "recall" in metrics
+
+
