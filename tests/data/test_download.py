@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
 from typing import Iterator, Tuple
-from src.data.download import DataDownloader
+from src.data.download_data import DataDownloader
 
 
 @pytest.fixture
@@ -22,28 +22,29 @@ def downloader_setup() -> Iterator[Tuple[DataDownloader, Path]]:
         yield downloader, raw_data_path
 
 
-@patch("src.data.download.kagglehub")
+@patch("src.data.download_data.kaggle")
 def test_download_from_kaggle(
-    mock_kagglehub: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
+    mock_kaggle: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
 ) -> None:
     """Test the Kaggle download method of the DataDownloader.
 
     Args:
-        mock_kagglehub (MagicMock): The mocked kagglehub library.
+        mock_kaggle (MagicMock): The mocked kaggle library.
         downloader_setup (Tuple[DataDownloader, Path]): The downloader instance
                                                         and path.
     """
     downloader, raw_data_path = downloader_setup
     downloader._download_from_kaggle()
 
-    mock_kagglehub.dataset_download.assert_called_once_with(
-        handle="tolgadincer/labeled-chest-xray-images",
-        output_dir=str(raw_data_path),
-        force_download=True,
+    mock_kaggle.api.dataset_download_files.assert_called_once_with(
+        dataset="tolgadincer/labeled-chest-xray-images",
+        path=str(raw_data_path),
+        unzip=True,
+        force=True,
     )
 
 
-@patch("src.data.download.shutil")
+@patch("src.data.download_data.shutil")
 def test_flatten_directory(
     mock_shutil: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
 ) -> None:
@@ -74,7 +75,7 @@ def test_flatten_directory(
     )
 
 
-@patch("src.data.download.shutil")
+@patch("src.data.download_data.shutil")
 def test_flatten_directory_no_nested_folder(
     mock_shutil: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
 ) -> None:
@@ -91,7 +92,7 @@ def test_flatten_directory_no_nested_folder(
     mock_shutil.move.assert_not_called()
 
 
-@patch("src.data.download.shutil")
+@patch("src.data.download_data.shutil")
 def test_organise_classes(
     mock_shutil: MagicMock, downloader_setup: Tuple[DataDownloader, Path]
 ) -> None:
