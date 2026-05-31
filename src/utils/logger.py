@@ -1,6 +1,7 @@
 import logging
 import sys
 from datetime import datetime
+from typing import Any
 
 
 class Logger:
@@ -10,7 +11,7 @@ class Logger:
         """Initialize and setup a logger instance.
 
         Args:
-            name: The name of the logger (typically __name__)
+            name: The name of the logger.
         """
         self._logger = self._setup_logger(name)
 
@@ -21,14 +22,12 @@ class Logger:
             name: The name of the logger
 
         Returns:
-            A configured logger instance
+            logging.Logger: A configured logger instance
         """
         from src.constants import LOGS_DIR
 
-        # Create logs directory.
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-        # Create logger.
         logger = logging.getLogger(name)
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
@@ -37,19 +36,16 @@ class Logger:
         if logger.hasHandlers():
             return logger
 
-        # Create formatters.
         formatter = logging.Formatter(
             "%(asctime)s [%(levelname)-8s] %(name)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-        # Create console handler for real-time feedback during development.
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.INFO)  # Log INFO and above to console
+        console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
-        # Main log file with detailed formatting.
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         log_file = LOGS_DIR / f"{timestamp}.log"
         file_handler = logging.FileHandler(log_file)
@@ -59,6 +55,13 @@ class Logger:
 
         return logger
 
-    def __getattr__(self, name):
-        """Delegate attribute access to the underlying logger."""
+    def __getattr__(self, name: str) -> Any:
+        """Delegate attribute access to the underlying logger.
+
+        Args:
+            name (str): The name of the logger.
+
+        Returns:
+            Any: A logger instance.
+        """
         return getattr(self._logger, name)

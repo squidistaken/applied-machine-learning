@@ -1,4 +1,4 @@
-import kagglehub
+import kaggle
 import shutil
 import argparse
 from pathlib import Path
@@ -24,10 +24,11 @@ class DataDownloader:
     def _download_from_kaggle(self) -> None:
         """Download the dataset from Kaggle."""
         LOGGER.info("Downloading data from Kaggle...")
-        kagglehub.dataset_download(
-            handle="tolgadincer/labeled-chest-xray-images",
-            output_dir=str(self.raw_data_path),
-            force_download=True,
+        kaggle.api.dataset_download_files(
+            dataset="tolgadincer/labeled-chest-xray-images",
+            path=str(self.raw_data_path),
+            unzip=True,
+            force=True,
         )
         LOGGER.info("Data downloaded successfully.")
 
