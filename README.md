@@ -22,18 +22,18 @@ The project can be run via a CLI, for convenient usage and testing.
 
 #### Option 1: Download Script using Kaggle API
 
-Set up a Kaggle API token on your device: https://www.kaggle.com/settings/api
-
 ```bash
 uv run -m src.data.download [--force]
 ```
  * `--force`: Forces a redownload of the data, in the event of missing or corrupted raw data. Defaults to `False`.
 
+This requires a Kaggle API token to be set up on your device: https://www.kaggle.com/settings/api
+
 #### Option 2: Manual Download
 
 Dataset: https://www.kaggle.com/datasets/tolgadincer/labeled-chest-xray-images
 
-1. Extract the archive and place it in a directory named "`DATA_DIR`/raw/"
+1. Extract the archive and place it in a directory named "`DATA_DIR`/raw/" (ex. `data/raw/<the extracted folder>`).
 2. Run the download script for automated reorganisation.
 
 ### Preprocessing and Feature Extraction

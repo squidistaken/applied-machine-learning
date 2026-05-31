@@ -31,4 +31,4 @@ dependencies = [
 line-length = 80
 
 [tool.fastapi]
-entrypoint = "src.api.api:app"
+entrypoint = "src.api.router:app"

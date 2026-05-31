@@ -3,13 +3,13 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.models.cnn import CNN
-from src.data.dataset_pytorch import ChestXRayDatasetPyTorch 
-from torch.utils.data import Dataset
+from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 
 
 @pytest.fixture
 def model():
     return CNN(ChestXRayDatasetPyTorch(split="train"))
+
 
 @pytest.fixture
 def dataloader():
@@ -44,6 +44,7 @@ def test_cnn_forward_pass(model):
     assert torch.all(predictions >= 0)
     assert torch.all(predictions < model.num_classes)
 
+
 def test_cnn_eval(model):
     metrics = model.evaluate(dataloader)
 
@@ -52,6 +53,3 @@ def test_cnn_eval(model):
     assert "macro_f1" in metrics
     assert "precision" in metrics
     assert "recall" in metrics
-
-
-
