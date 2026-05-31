@@ -218,7 +218,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Resolve dynamic default epochs if not explicitly specified
     epochs = args.epochs
     if epochs is None:
         if args.model == "cnn":
@@ -228,14 +227,12 @@ def main() -> None:
         elif args.model == "lgbm":
             epochs = 150
         else:
-            epochs = 20  # Fallback to guarantee type check passes
+            epochs = 20
 
-    # Resolve dynamic default learning rates if not explicitly specified
     lr = args.lr
     if lr is None:
         lr = 1e-3 if args.model in ["cnn", "resnet"] else 0.05
 
-    # Cast model parameter manually to resolve argparse type-checks against Literal string
     train_model(
         model_name=args.model,
         epochs=epochs,
