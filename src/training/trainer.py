@@ -344,6 +344,7 @@ class Trainer:
 
         self.writer.close()
 
+    # TODO: Output metrics as a JSON
     def get_predictions(
         self, use_test: bool = False
     ) -> tuple[np.ndarray, np.ndarray]:
