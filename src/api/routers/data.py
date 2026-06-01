@@ -6,7 +6,7 @@ from fastapi import (
     HTTPException,
 )
 from fastapi.responses import FileResponse
-from src.utils.api_utils import get_data_files, _download_task, _preprocess_task
+from src.utils.api_utils import get_data_files, download_task, preprocess_task
 from src.api.schema import (
     DataType,
     SplitType,
@@ -36,7 +36,7 @@ async def download_data(
     request: DownloadRequest, background_tasks: BackgroundTasks
 ) -> BackgroundJobResponse:
     background_tasks.add_task(
-        _download_task,
+        download_task,
         force_download=request.force_download,
         username=request.kaggle_username,
         key=request.kaggle_key,
@@ -60,7 +60,7 @@ async def preprocess_data(
     request: PreprocessRequest, background_tasks: BackgroundTasks
 ) -> BackgroundJobResponse:
     background_tasks.add_task(
-        _preprocess_task, pipeline=request.pipeline, lgb_size=request.lgb_size
+        preprocess_task, pipeline=request.pipeline, lgb_size=request.lgb_size
     )
     return BackgroundJobResponse(
         message=f"Preprocessing pipeline '{request.pipeline.value}' initiated in the background."
