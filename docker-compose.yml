@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    image: aml
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./logs:/app/logs
+
+  tensorboard:
+    build: .
+    image: aml
+    command: ["uv", "run", "tensorboard", "--logdir", "logs/tensorboard", "--host", "0.0.0.0"]
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./logs:/app/logs

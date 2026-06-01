@@ -1,6 +1,24 @@
 # AML: Pneumonia Classification via Chest X-Rays
 Repository for the Applied Machine Learning course (WBAI065-05) at the University of Groningen.
 
+## Running via Docker
+
+1. Build the image.
+
+```bash
+docker compose build
+```
+
+2. Run the image.
+
+```bash
+docker compose up
+```
+
+This exposes the following ports:
+ * `8000`: FastAPI application.
+ * `6006`: Tensorflow application.
+
 ## Development
 
 We use [uv](https://docs.astral.sh/uv/) for project management.
@@ -73,13 +91,7 @@ uv run -m src.training.cv --model <model_name> [options]
  * `--device`: Device for PyTorch models (`cuda`, `mps`, `cpu`). Defaults to auto-detection.
  * `--grid-search`: Enable hyperparameter grid search cross-validation.
 
-### Tensorboard Dashboard
-
-```bash
-uv run tensorboard --logdir logs/tensorboard
-```
-
-### Running Tests
+## Running Tests
 
 ```bash
 uv run pytest tests
