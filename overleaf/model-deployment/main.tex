@@ -43,7 +43,7 @@
         \hline
         Environment Setup & Completed. & \href{https://github.com/squidistaken/applied-machine-learning}{\texttt{github.com/squidistaken/applied-machine-learning}} \\
         \hline
-        Project Proposal & Completed. & Feedback applied. \\
+        Project Proposal & Completed. & Feedback has been applied to the project. \\
         \hline
         Preprocessing & Completed. & Pipeline implemented based on the proposal. Cross-validation ran. \\
         \hline
@@ -53,7 +53,7 @@
         \hline
         Finetune Pretrained CNN & Completed. & - \\
         \hline
-        FastAPI Backend & Completed. & - \\
+        FastAPI Backend & Completed. & Port is 8000. \\
         \hline
         Streamlit Frontend & Not started. & - \\
         \hline
@@ -79,7 +79,7 @@
         \hline
         Model Compression & Not started. & - \\
         \hline
-        Containerisation & Completed. & Dockerised. Currently exposes port for FastAPI and Tensorboard. \\
+        Containerisation & Completed. & Dockerised. Currently exposes ports for FastAPI and Tensorboard. \\
         \hline
     \end{tabular}
     \caption{Status of Bonus Tasks}
@@ -88,7 +88,7 @@
 
 \section{Models Results}
 
-Ideal hyperparameters were obtained from a 5-fold cross-validation grid search. Early stopping was implemented with a standard patience of three epochs. We trained with an 80-20 training-validation set split. The test split is already separate from the original data source. Figures \ref{fig:models_metrics} and \ref{fig:models_training_history} demonstrate the results per model.
+Ideal hyperparameters were obtained from a 5-fold cross-validation grid search. Early stopping was implemented with a standard patience of three epochs. We trained with an 80-20 training-validation set split. The test split is already separate from the original data source. Figures \ref{fig:models_training_history} and \ref{fig:models_cm} demonstrate the results per model.
 
 \begin{itemize}
     \item \textbf{Baseline 3-layer CNN:} On the validation set, loss reported 0.899, macro-f1 score 0.642, precision 0.635, and recall 0.660. On the testing set, loss reported 0.958, macro-f1 score 0.660, precision 0.661, and recall 0.662.
@@ -192,7 +192,7 @@ The API was developed using FastAPI. Figures \ref{fig:api_curl} and \ref{fig:api
     \item \textbf{Anneke:} Trainer class, model classes, and API.
     \item \textbf{Marcus:} Preprocessing, cross-validation, training, API, unit tests, and \textit{some} containerisation.
     \item \textbf{Ignacio:} Model classes and API.
-    \item \textbf{Julian:} 
+    \item \textbf{Julian:} Implementing Resnet18, writing unittests and dockerization.
 \end{itemize}
 
 \end{document}
