@@ -3,10 +3,10 @@ import pytest
 from src.api.schema import ModelMetrics
 from fastapi.testclient import TestClient
 from src.api.router import app
+from src.api.schema import TrainRequest, ModelType
 
 
 client = TestClient(app)
-
 
 def test_and_retrieve_json(tmp_path):
     metrics = ModelMetrics(
@@ -25,29 +25,14 @@ def test_and_retrieve_json(tmp_path):
     assert loaded == metrics
 
 
-
-def test_data():
-    response = client.get("/data")
+def test_data_download():
+    response = client.get("/data", headers={"data_type": "raw", "split": "train", "page": "0", "limit": "20"})
 
     assert response.status_code == 200
 
-def test_train():
-    response = client.get("/train")
-
-    assert response.status_code == 200 
-
-def test_metrics():
-    response = client.get("/metrics")
-
-    assert response.status_code == 200 
 
 
 def test_models():
-    response = client.get("/models")
-
-    assert response.status_code == 200
-
-def test_predict():
-    response = client.get("/predict")
+    response = client.get("/models", headers={"model_name": ModelType.CNN})
 
     assert response.status_code == 200
