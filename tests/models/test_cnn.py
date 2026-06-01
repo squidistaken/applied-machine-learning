@@ -11,7 +11,6 @@ def model():
     return CNN(ChestXRayDatasetPyTorch(split="train"))
 
 
-@pytest.fixture
 def dataloader():
     images = torch.randn(16, 1, 128, 128)
     labels = torch.randint(0, 3, (16,))
@@ -46,7 +45,8 @@ def test_cnn_forward_pass(model):
 
 
 def test_cnn_eval(model):
-    metrics = model.evaluate(dataloader)
+    X = dataloader()
+    metrics = model.evaluate(X)
 
     assert isinstance(metrics, dict)
 

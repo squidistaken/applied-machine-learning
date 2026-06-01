@@ -6,6 +6,10 @@ from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
 
 
 @pytest.fixture
+def model():
+    return LightGBM(ChestXRayDatasetLightGBM(split="train"))
+
+
 def sample_data():
     rng = np.random.default_rng(42)
 
@@ -14,15 +18,9 @@ def sample_data():
 
     return X, y
 
-
-@pytest.fixture
-def model():
-    return LightGBM(ChestXRayDatasetLightGBM(split="train"))
-
-
 def test_lgmb_initialization(model):
     assert len(model.params) > 0
-    assert model.params["num_classes"] == 3
+    assert model.params["num_class"] == 3
 
 
 def test_lgbm_backward_pass(model):
@@ -33,7 +31,7 @@ def test_lgbm_backward_pass(model):
     assert model.model is not None
 
 
-def test_lgbm_forward_pass(model, sample_data):
+def test_lgbm_forward_pass(model):
     X, y = sample_data()
 
     model.backward_pass(x_train=X, y_train=y, num_boost_round=5)
@@ -45,8 +43,8 @@ def test_lgbm_forward_pass(model, sample_data):
     assert np.all(predictions < 3)
 
 
-def test_lgbm_eval(model, sample_data):
-    X, y = sample_data
+def test_lgbm_eval(model):
+    X, y = sample_data()
 
     model.backward_pass(
         x_train=X,

@@ -25,15 +25,21 @@ def test_and_retrieve_json(tmp_path):
     assert loaded == metrics
 
 
+
 def test_data():
     response = client.get("/data")
 
     assert response.status_code == 200
 
+def test_train():
+    response = client.get("/train")
+
+    assert response.status_code == 200 
+
 def test_metrics():
     response = client.get("/metrics")
 
-    assert response.status_code == 200
+    assert response.status_code == 200 
 
 
 def test_models():
