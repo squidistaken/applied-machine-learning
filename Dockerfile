@@ -7,5 +7,5 @@ COPY . /src
 
 RUN uv sync --locked
 
-CMD ["uv", "run", "fastapi", "run"]
+CMD ["uv", "run", "fastapi", "run", "--port", "8000"]
 
