@@ -1,0 +1,198 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, top=1.5cm, bottom=1.5cm, left=1cm, right=1cm]{geometry}
+\usepackage{titling}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\bibliographystyle{plain}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+
+\setlength{\droptitle}{-5em}
+\title{\textbf{Applied Machine Learning - Model Deployment}}
+\author{
+        Anneke Catherine Naseef (S6490662) \\
+        Marcus Harald Olof Persson (S5343798) \\
+        Ignacio Jacob Uroz Rodríguez (S5118913) \\
+        Julian Wilbert Sprietsma (S5096219) \\
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Status of Development}
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Task} & \textbf{Status} & \textbf{Description} \\
+        \hline
+        \hline
+        Team Formation & Completed. & If there was no team yet, this would be concerning. \\
+        \hline
+        Environment Setup & Completed. & \href{https://github.com/squidistaken/applied-machine-learning}{\texttt{github.com/squidistaken/applied-machine-learning}} \\
+        \hline
+        Project Proposal & Completed. & Feedback applied. \\
+        \hline
+        Preprocessing & Completed. & Pipeline implemented based on the proposal. Cross-validation ran. \\
+        \hline
+        Train CNN & Completed. & - \\
+        \hline
+        Train LightGBM & Completed. & - \\
+        \hline
+        Finetune Pretrained CNN & Completed. & - \\
+        \hline
+        FastAPI Backend & Completed. & - \\
+        \hline
+        Streamlit Frontend & Not started. & - \\
+        \hline
+        Cleanup & In progress. & Documentation and project organisation are being kept to good standards. \\
+        \hline
+        Presentation & Not started. & - \\
+        \hline
+        Individual Reflection & Not started. & We kind of need to finish the project first. \\
+        \hline
+    \end{tabular}
+    \caption{Status of Standard Tasks}
+    \label{tab:status_standard}
+\end{table}
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Bonus Task} & \textbf{Status} & \textbf{Description} \\
+        \hline
+        \hline
+        Uncertainty Quantification & In progress & If, in the event, this is infeasible, we will drop this first. \\
+        \hline
+        Model Compression & Not started. & - \\
+        \hline
+        Containerisation & Completed. & Dockerised. Currently exposes port for FastAPI and Tensorboard. \\
+        \hline
+    \end{tabular}
+    \caption{Status of Bonus Tasks}
+    \label{tab:status_bonus}
+\end{table}
+
+\section{Models Results}
+
+Ideal hyperparameters were obtained from a 5-fold cross-validation grid search. Early stopping was implemented with a standard patience of three epochs. We trained with an 80-20 training-validation set split. The test split is already separate from the original data source. Figures \ref{fig:models_metrics} and \ref{fig:models_training_history} demonstrate the results per model.
+
+\begin{itemize}
+    \item \textbf{Baseline 3-layer CNN:} On the validation set, loss reported 0.899, macro-f1 score 0.642, precision 0.635, and recall 0.660. On the testing set, loss reported 0.958, macro-f1 score 0.660, precision 0.661, and recall 0.662.
+    \begin{itemize}
+        \item Learning rate: 0.0001
+        \item Batch size: 16
+        \item Weight decay: 0.0001
+        \item Epochs: 20, stopped at 20.
+    \end{itemize}
+    \item \textbf{LightGBM:} On the validation set, macro-f1 score reported 0.740, precision 0.756, and recall 0.737. On the testing set, macro-f1 score reported 0.770, precision 0.790, and recall 0.773.
+    \begin{itemize}
+        \item Learning rate: 0.1
+        \item Number of leaves: 15
+        \item Maximum depth: -1
+        \item Epochs: 150, stopped at 79 from early stopping.
+    \end{itemize}
+    \item \textbf{Finetuned ResNet-18 CNN:} On the validation set, loss reported 0.609, macro-f1 score 0.738, precision 0.732, and recall 0.757. On the testing set, loss reported 0.507, macro-f1 score 0.831, precision 0.833, and recall 0.829.
+    \begin{itemize}
+        \item Learning rate: 0.0001
+        \item Batch size: 32
+        \item Weight decay: 0.0001
+        \item Epochs: 10, stopped at 10.
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[!h]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf/model-deployment/images/cnn_training_history.png}
+        \caption{Training History for Baseline CNN.}
+        \label{fig:classes}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf/model-deployment/images/lgbm_training_history.png}
+        \caption{Training History for LightGBM.}
+        \label{fig:classes}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf/model-deployment/images/resnet_training_history.png}
+        \caption{Training History for Finetuned ResNet-18 CNN.}
+        \label{fig:classes}
+    \end{subfigure}
+    
+    \caption{Training History for Models.}
+    \label{fig:models_training_history}
+\end{figure}
+
+\begin{figure}[!h]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf/model-deployment/images/cnn_confusion_matrix.png}
+        \caption{Confusion Matrix for Baseline CNN.}
+        \label{fig:classes}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf/model-deployment/images/lgbm_confusion_matrix.png}
+        \caption{Confusion Matrix for LightGBM.}
+        \label{fig:classes}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{overleaf/model-deployment/images/resnet_confusion_matrix.png}
+        \caption{Confusion Matrix for Finetuned ResNet-18 CNN.}
+        \label{fig:classes}
+    \end{subfigure}
+    
+    \caption{Confusion Matrix for Models.}
+    \label{fig:models_cm}
+\end{figure}
+
+\section{API Implementation}
+
+The API was developed using FastAPI. Figures \ref{fig:api_curl} and \ref{fig:api_docs} demonstrate the functionality and design.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.80\linewidth]{overleaf//model-deployment//images/api_curl.png}
+    \caption{API Demonstration Example via \texttt{curl}.}
+    \label{fig:api_curl}
+\end{figure}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.80\linewidth]{overleaf//model-deployment//images/api_docs.png}
+    \caption{API Documentation Example via FastAPI.}
+    \label{fig:api_docs}
+\end{figure}
+
+\section{Member Contributions}
+
+\begin{itemize}
+    \item \textbf{Anneke:} Trainer class, model classes, and API.
+    \item \textbf{Marcus:} Preprocessing, cross-validation, training, API, unit tests, and \textit{some} containerisation.
+    \item \textbf{Ignacio:} Model classes and API.
+    \item \textbf{Julian:} 
+\end{itemize}
+
+\end{document}
