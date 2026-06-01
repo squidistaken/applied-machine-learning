@@ -1,0 +1,24 @@
+==================================================
+ LGBM TRAINING RUN EVALUATION REPORT
+==================================================
+
+HYPERPARAMETERS:
+----------------
+Learning Rate: 0.1
+Max Epochs: 150
+Final Epoch: 79
+Num Leaves: 15
+Max Depth: -1
+Patience: 3
+
+VALIDATION DATASET METRICS:
+---------------------------
+macro_f1        : 0.739617
+precision       : 0.755564
+recall          : 0.737019
+
+INDEPENDENT TEST DATASET METRICS (BLIND):
+-----------------------------------------
+macro_f1        : 0.770617
+precision       : 0.790257
+recall          : 0.773160

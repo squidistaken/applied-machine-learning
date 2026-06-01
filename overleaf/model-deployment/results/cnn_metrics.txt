@@ -1,0 +1,27 @@
+==================================================
+ CNN TRAINING RUN EVALUATION REPORT
+==================================================
+
+HYPERPARAMETERS:
+----------------
+Learning Rate: 0.0001
+Max Epochs: 20
+Final Epoch: 20
+Batch Size: 16
+Weight Decay: 0.0001
+Device: cuda
+Patience: 3
+
+VALIDATION DATASET METRICS:
+---------------------------
+loss            : 0.899017
+macro_f1        : 0.642162
+precision       : 0.635079
+recall          : 0.660419
+
+INDEPENDENT TEST DATASET METRICS (BLIND):
+-----------------------------------------
+loss            : 0.958272
+macro_f1        : 0.660850
+precision       : 0.661110
+recall          : 0.662010
