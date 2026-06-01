@@ -1,6 +1,6 @@
 import re
 import os
-from typing import Any, Optional
+from typing import Any, Optional, cast
 from src.constants import RESULTS_DIR, DATA_DIR
 from src.data.download_data import DataDownloader
 from src.features.preprocess_pytorch import (
@@ -51,7 +51,8 @@ def parse_evaluation_report(
 
     metrics_data = None
     if len(parsed_metrics) == 4:
-        metrics_data = ModelMetrics(**parsed_metrics)
+        data = cast(dict[str, Any], parsed_metrics)
+        metrics_data = ModelMetrics(**data)
 
     hyperparameters = {}
     hyperparams_section = re.search(
@@ -81,8 +82,7 @@ def get_data_files(data_type: DataType, split: SplitType) -> list[dict]:
         split (SplitType): The dataset split to index (e.g., 'train' or 'test').
 
     Returns:
-        list[dict]: A list of dictionaries containing metadata for each file, including
-            filename, label, split, data_type, and the absolute path.
+        list[dict]: A list of dictionaries containing metadata for each file.
     """
     base_dir = DATA_DIR / data_type.value / split.value
     if not base_dir.exists():
@@ -95,7 +95,7 @@ def get_data_files(data_type: DataType, split: SplitType) -> list[dict]:
     ]
     files = []
 
-    # Sorting ensures deterministic indexing
+    # Sorting ensures deterministic indexing.
     for cls in classes:
         cls_dir = base_dir / cls
         if cls_dir.is_dir():
@@ -113,10 +113,16 @@ def get_data_files(data_type: DataType, split: SplitType) -> list[dict]:
     return files
 
 
-def _download_task(
+def download_task(
     force_download: bool, username: Optional[str], key: Optional[str]
 ) -> None:
-    """Background task to download the dataset from Kaggle."""
+    """Background task to download the dataset from Kaggle.
+
+    Args:
+        force_download (bool): Whether to force download.
+        username (Optional[str]): The Kaggle username.
+        key (Optional[str]): The Kaggle API key.
+    """
     if username and key:
         os.environ["KAGGLE_USERNAME"] = username
         os.environ["KAGGLE_KEY"] = key
@@ -124,8 +130,13 @@ def _download_task(
     downloader.run(force_download=force_download)
 
 
-def _preprocess_task(pipeline: DataPipelineType, lgb_size: int) -> None:
-    """Background task to preprocess the dataset."""
+def preprocess_task(pipeline: DataPipelineType, lgb_size: int) -> None:
+    """Background task to preprocess the dataset.
+
+    Args:
+        pipeline (DataPipelineType): The preprocessing pipeline to use.
+        lgb_size (int): The target size for LightGBM preprocessing.
+    """
     if pipeline in [DataPipelineType.ALL, DataPipelineType.PYTORCH]:
         preprocess_pytorch_data()
     if pipeline in [DataPipelineType.ALL, DataPipelineType.LIGHTGBM]:
