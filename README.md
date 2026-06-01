@@ -85,7 +85,7 @@ uv run -m src.training.cv --model <model_name> [options]
  * `--model`: The model to cross-validate: `cnn`, `resnet`, `lgbm`.
  * `--splits`: Number of folds (k). Defaults to 5.
  * `--epochs`: Number of training epochs. Defaults dynamically.
- * ``-batch-size`: Batch size for PyTorch models. Defaults to 32.
+ * `-batch-size`: Batch size for PyTorch models. Defaults to 32.
  * `--lr`: Learning rate. Defaults dynamically.
  * `--weight-decay`: Weight decay for PyTorch models. Defaults to 0.0.
  * `--device`: Device for PyTorch models (`cuda`, `mps`, `cpu`). Defaults to auto-detection.
