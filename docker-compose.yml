@@ -7,6 +7,13 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./logs:/app/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   tensorboard:
     build: .
@@ -15,4 +22,15 @@ services:
     ports:
       - "6006:6006"
     volumes:
+      - ./logs:/app/logs
+
+  streamlit:
+    build: .
+    image: aml
+    command: ["uv", "run", "streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./main.py:/app/main.py
+      - ./config.yaml:/app/config.yaml
       - ./logs:/app/logs

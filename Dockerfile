@@ -18,5 +18,7 @@ RUN cp example.config.yaml config.yaml
 RUN uv sync --locked --no-dev
 
 EXPOSE 8000
+EXPOSE 8501
+EXPOSE 6006
 
 CMD ["uv", "run", "fastapi", "run", "--port", "8000"]
