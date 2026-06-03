@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 from typing import Optional, cast
 from pathlib import Path
 from src.models.base import BaseModel
 from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 from src.constants import LOGGER
+from src.utils.uq_utils import calculate_ece, calculate_predictive_entropy
 
 
 class CNN(BaseModel, nn.Module):
@@ -144,6 +146,8 @@ class CNN(BaseModel, nn.Module):
         self,
         x_test: ChestXRayDatasetPyTorch,
         y_test: Optional[ChestXRayDatasetPyTorch] = None,
+        enable_uq: bool = True,
+        **kwargs,
     ) -> dict[str, float]:
         """
         Test the performance of the model.
@@ -154,6 +158,8 @@ class CNN(BaseModel, nn.Module):
                                                         labels (Ignored as the
                                                         images provide the
                                                         labels.).
+            enable_uq (bool): Whether to enable uncertainty quantification.
+                              Defaults to True.
 
         Returns:
             dict[str, float]: Metric(s) indicating the performance.
@@ -163,6 +169,7 @@ class CNN(BaseModel, nn.Module):
 
         all_preds = []
         all_labels = []
+        all_probs = []
 
         with torch.no_grad():
             for images, labels in x_test:
@@ -171,21 +178,37 @@ class CNN(BaseModel, nn.Module):
                 outputs = self.forward(images)
                 predictions = torch.argmax(outputs, dim=1)
 
+                if enable_uq:
+                    probs = torch.softmax(outputs, dim=1)
+                    all_probs.extend(probs.cpu().numpy())
+
                 all_preds.extend(predictions.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
 
-        macro_f1 = f1_score(all_labels, all_preds, average="macro")
+        all_labels_np = np.array(all_labels)
+        macro_f1 = f1_score(all_labels_np, all_preds, average="macro")
         precision = precision_score(
-            all_labels, all_preds, average="macro", zero_division=0
+            all_labels_np, all_preds, average="macro", zero_division=0
         )
         recall = recall_score(
-            all_labels, all_preds, average="macro", zero_division=0
+            all_labels_np, all_preds, average="macro", zero_division=0
         )
+
+        if enable_uq and len(all_probs) > 0:
+            all_probs_np = np.array(all_probs)
+            ece = calculate_ece(all_labels_np, all_probs_np)
+            entropies = calculate_predictive_entropy(all_probs_np)
+            mean_entropy = float(np.mean(entropies))
+        else:
+            ece = 0.0
+            mean_entropy = 0.0
 
         metrics = {
             "macro_f1": float(macro_f1),
             "precision": float(precision),
             "recall": float(recall),
+            "ece": float(ece),
+            "predictive_entropy": float(mean_entropy),
         }
 
         return metrics

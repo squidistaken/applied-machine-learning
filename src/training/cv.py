@@ -33,6 +33,7 @@ def cross_validate(
     device: str = DEVICE,
     num_leaves: int = DEFAULT_NUM_LEAVES,
     max_depth: int = DEFAULT_MAX_DEPTH,
+    enable_uq: bool = True,
 ) -> dict[str, float]:
     """
     Run stratified k-fold cross-validation.
@@ -56,6 +57,8 @@ def cross_validate(
                           DEFAULT_NUM_LEAVES.
         max_depth (int): The maximum tree depth (LightGBM only). Defaults to
                          DEFAULT_MAX_DEPTH.
+        enable_uq (bool): Whether to calculate calibration metrics. Defaults to
+                          True.
 
     Returns:
         dict[str, float]: A dictionary containing average metrics across all
@@ -63,7 +66,13 @@ def cross_validate(
     """
     is_pytorch = model_class in [CNN, ResNet]
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
-    fold_metrics = {"macro_f1": [], "precision": [], "recall": []}
+    fold_metrics = {
+        "macro_f1": [],
+        "precision": [],
+        "recall": [],
+        "ece": [],
+        "predictive_entropy": [],
+    }
 
     if is_pytorch:
         if not isinstance(dataset_train, ChestXRayDatasetPyTorch):
@@ -113,6 +122,7 @@ def cross_validate(
                 eval_data=val_subset,
                 batch_size=batch_size,
                 device=device,
+                enable_uq=enable_uq,
             )
 
             trainer.train(num_epochs=epochs, learning_rate=lr, patience=3)
@@ -135,9 +145,12 @@ def cross_validate(
                 y_val=y_val,
                 num_boost_round=epochs,
                 patience=5,
+                enable_uq=enable_uq,
             )
 
-            metrics = model.evaluate(x_test=X_val, y_test=y_val)
+            metrics = model.evaluate(
+                x_test=X_val, y_test=y_val, enable_uq=enable_uq
+            )
 
         for key in fold_metrics.keys():
             fold_metrics[key].append(metrics[key])
@@ -151,16 +164,28 @@ def cross_validate(
 
 
 def run_grid_search(
-    model_name: str, splits: int, epochs: int, device: str
+    model_name: str,
+    splits: int,
+    epochs: int,
+    device: str,
+    enable_uq: bool = True,
 ) -> None:
     """
     Run a grid search over cross-validation configurations.
+
+    Args:
+        model_name (str): The name of the model.
+        splits (int): The number of folds.
+        epochs (int): The number of epochs/boosting rounds.
+        device (str): The device to run models on.
+        enable_uq (bool): Whether to calculate calibration metrics. Defaults to
+                          True.
+
     """
     LOGGER.info(
-        f"\n{'=' * 60}\nInitialising Grid Search CV (Folds: {splits}) for {model_name.upper()}."
+        f"\n{'=' * 60}\nInitialising Grid Search CV (Folds: {splits}, UQ Enabled: {enable_uq}) for {model_name.upper()}."
     )
 
-    # NOTE: This is where you can configure the grid.
     if model_name in ["cnn", "resnet"]:
         grid = {
             "lr": [1e-4, 1e-3, 1e-2],
@@ -213,6 +238,7 @@ def run_grid_search(
                 learning_rate=config["lr"],
                 weight_decay=config["weight_decay"],
                 device=device,
+                enable_uq=enable_uq,
             )
         else:
             metrics = cross_validate(
@@ -223,6 +249,7 @@ def run_grid_search(
                 learning_rate=config["lr"],
                 num_leaves=config["num_leaves"],
                 max_depth=config["max_depth"],
+                enable_uq=enable_uq,
             )
 
         score = metrics["macro_f1"]
@@ -260,7 +287,9 @@ def run_grid_search(
             f.write(f"[{idx + 1:02d}] Configuration: {conf}\n")
             f.write(f"     -> Macro-F1 : {metr['macro_f1']:.6f}\n")
             f.write(f"     -> Precision: {metr['precision']:.6f}\n")
-            f.write(f"     -> Recall   : {metr['recall']:.6f}\n\n")
+            f.write(f"     -> Recall   : {metr['recall']:.6f}\n")
+            f.write(f"     -> ECE      : {metr['ece']:.6f}\n")
+            f.write(f"     -> Entropy  : {metr['predictive_entropy']:.6f}\n\n")
 
         f.write("\n" + "*" * 60 + "\n")
         f.write("BEST CONFIGURATION RETRIEVED:\n")
@@ -324,6 +353,13 @@ def main() -> None:
         action="store_true",
         help="Enable hyperparameter grid search cross-validation.",
     )
+    parser.add_argument(
+        "--no-uq",
+        dest="enable_uq",
+        action="store_false",
+        help="Disable slow uncertainty calibration metrics during cross-validation segments.",
+    )
+    parser.set_defaults(enable_uq=True)
 
     args = parser.parse_args()
 
@@ -352,6 +388,7 @@ def main() -> None:
             splits=args.splits,
             epochs=epochs,
             device=args.device,
+            enable_uq=args.enable_uq,
         )
     else:
         LOGGER.info(
@@ -376,6 +413,7 @@ def main() -> None:
                 learning_rate=lr,
                 weight_decay=args.weight_decay,
                 device=args.device,
+                enable_uq=args.enable_uq,
             )
         elif args.model == "lgbm":
             dataset_train = ChestXRayDatasetLightGBM(
@@ -390,6 +428,7 @@ def main() -> None:
                 learning_rate=lr,
                 num_leaves=DEFAULT_NUM_LEAVES,
                 max_depth=DEFAULT_MAX_DEPTH,
+                enable_uq=args.enable_uq,
             )
 
         # Save standard non-grid search CV results report as a text file

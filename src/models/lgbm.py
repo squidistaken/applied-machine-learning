@@ -1,12 +1,14 @@
+from src.utils.uq_utils import calculate_ece
 import lightgbm as lgb
 import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, cast
 import pandas as pd
 from src.models.base import BaseModel
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
 from src.constants import LOGGER
+from src.utils.uq_utils import calculate_predictive_entropy
 
 
 class LightGBM(BaseModel):
@@ -56,7 +58,7 @@ class LightGBM(BaseModel):
             "min_data_in_leaf": 20,
         }
 
-        # Safely update with any additional custom parameters passed in
+        # Safely update with any additional custom parameters passed in.
         if params:
             self.params.update(params)
 
@@ -92,6 +94,7 @@ class LightGBM(BaseModel):
         num_boost_round: int = 100,
         patience: int = 3,
         evals_result: Optional[dict] = None,
+        enable_uq: bool = True,
         **kwargs,
     ) -> None:
         """
@@ -108,6 +111,7 @@ class LightGBM(BaseModel):
             num_boost_round (int): The number of boosting rounds.
             patience (int): Early stopping patience threshold.
             evals_result (Optional[dict]): Dictionary to store evaluation history.
+            enable_uq (bool): Whether to enable uncertainty quantification. Defaults to True.
             **kwargs: The additional hyperparameters or configuration.
         """
         if x_train is not None and y_train is not None:
@@ -168,6 +172,15 @@ class LightGBM(BaseModel):
                         )
                     )
 
+                    if enable_uq:
+                        val_y_np = np.asarray(val_y)
+                        ece = float(calculate_ece(val_y_np, preds))
+                        entropies = calculate_predictive_entropy(preds)
+                        mean_entropy = float(np.mean(entropies))
+                    else:
+                        ece = 0.0
+                        mean_entropy = 0.0
+
                     if evals_result is not None:
                         if "val" not in evals_result:
                             evals_result["val"] = {}
@@ -177,10 +190,18 @@ class LightGBM(BaseModel):
                             evals_result["val"]["precision"] = []
                         if "recall" not in evals_result["val"]:
                             evals_result["val"]["recall"] = []
+                        if "ece" not in evals_result["val"]:
+                            evals_result["val"]["ece"] = []
+                        if "predictive_entropy" not in evals_result["val"]:
+                            evals_result["val"]["predictive_entropy"] = []
 
                         evals_result["val"]["macro_f1"].append(f1)
                         evals_result["val"]["precision"].append(prec)
                         evals_result["val"]["recall"].append(rec)
+                        evals_result["val"]["ece"].append(ece)
+                        evals_result["val"]["predictive_entropy"].append(
+                            mean_entropy
+                        )
 
                 callbacks.append(record_custom_metrics)
 
@@ -201,7 +222,9 @@ class LightGBM(BaseModel):
         self,
         x_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         y_test: Optional[Union[np.ndarray, pd.Series]] = None,
+        enable_uq: bool = True,
         test_dataset: Optional[ChestXRayDatasetLightGBM] = None,
+        **kwargs,
     ) -> dict[str, float]:
         """
         Test the performance of the model.
@@ -213,6 +236,7 @@ class LightGBM(BaseModel):
                                                              true labels.
             test_dataset (Optional[ChestXRayDatasetLightGBM]): The testing
                                                                dataset.
+            enable_uq (bool): Whether to enable uncertainty quantification. Defaults to True.
 
         Returns:
             dict[str, float]: Metric(s) indicating the performance.
@@ -224,6 +248,13 @@ class LightGBM(BaseModel):
                 "Must provide either (x_test, y_test) or test_dataset."
             )
 
+        model = self.model
+        if model is None:
+            raise ValueError(
+                "Model is not trained yet. Call backward_pass first."
+            )
+
+        y_pred_prob = np.asarray(cast(lgb.Booster, self.model).predict(x_test))
         predictions = self.forward_pass(x_test)
 
         macro_f1 = f1_score(y_test, predictions, average="macro")
@@ -233,10 +264,22 @@ class LightGBM(BaseModel):
         recall = recall_score(
             y_test, predictions, average="macro", zero_division=0
         )
+
+        if enable_uq:
+            y_test_np = np.asarray(y_test)
+            ece = calculate_ece(y_test_np, y_pred_prob)
+            entropies = calculate_predictive_entropy(y_pred_prob)
+            mean_entropy = float(np.mean(entropies))
+        else:
+            ece = 0.0
+            mean_entropy = 0.0
+
         metrics = {
             "macro_f1": float(macro_f1),
             "precision": float(precision),
             "recall": float(recall),
+            "ece": float(ece),
+            "predictive_entropy": float(mean_entropy),
         }
 
         LOGGER.info(f"Evaluation metrics: {metrics}")

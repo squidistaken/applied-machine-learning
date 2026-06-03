@@ -49,7 +49,14 @@ def parse_evaluation_report(
         metrics_data = None
         if metrics_dict:
             filtered_metrics: dict[str, Any] = {}
-            for key in ["loss", "macro_f1", "precision", "recall"]:
+            for key in [
+                "loss",
+                "macro_f1",
+                "precision",
+                "recall",
+                "ece",
+                "predictive_entropy",
+            ]:
                 if key in metrics_dict:
                     filtered_metrics[key] = metrics_dict[key]
 
@@ -108,7 +115,7 @@ def get_data_files(data_type: DataType, split: SplitType) -> list[dict]:
 def download_task(
     force_download: bool, username: Optional[str], key: Optional[str]
 ) -> None:
-    """Background task to download the dataset from Kaggle.
+    """Download the dataset from Kaggle.
 
     Args:
         force_download (bool): Whether to force download.
@@ -123,7 +130,7 @@ def download_task(
 
 
 def preprocess_task(pipeline: DataPipelineType, lgb_size: int) -> None:
-    """Background task to preprocess the dataset.
+    """Preprocess the dataset.
 
     Args:
         pipeline (DataPipelineType): The preprocessing pipeline to use.

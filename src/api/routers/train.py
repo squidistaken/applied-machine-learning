@@ -58,10 +58,11 @@ async def train_model(
         max_depth=request.max_depth,
         weight_decay=request.weight_decay,
         device=DEVICE,
+        enable_uq=request.enable_uq,
     )
 
     return TrainResponse(
-        message=f"Training request for {request.model_name.value} received and started in the background.",
+        message=f"Training request for {request.model_name.value} received and started in the background (UQ metrics: {request.enable_uq}).",
         model_name=request.model_name,
         epochs=cast(int, epochs),
         batch_size=request.batch_size,

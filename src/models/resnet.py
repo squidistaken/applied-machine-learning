@@ -57,10 +57,13 @@ class ResNet(CNN):
                 original_conv1.weight.mean(dim=1, keepdim=True)
             )
 
-        # Replace the fully connected layer. Also sets requires_grad=True by
-        # default.
+        # To enable Monte Carlo (MC) Dropout on ResNet, we must append a
+        # Dropout layer right before the final classification linear layer.
         num_ftrs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(num_ftrs, self.num_classes)
+        self.resnet.fc = nn.Sequential(
+            nn.Dropout(p=0.5), nn.Linear(num_ftrs, self.num_classes)
+        )
+
         self.loss_function = nn.CrossEntropyLoss()
         trainable_params = [p for p in self.parameters() if p.requires_grad]
         self.optimizer = optim.Adam(
