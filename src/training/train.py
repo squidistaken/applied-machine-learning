@@ -1,6 +1,6 @@
 import argparse
 import copy
-from typing import Literal
+from typing import Literal, Any
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 from src.constants import LOGGER, DEVICE, RESULTS_DIR
@@ -10,6 +10,7 @@ from src.models.cnn import CNN
 from src.models.resnet import ResNet
 from src.models.lgbm import LightGBM
 from src.training.trainer import Trainer
+import json
 
 
 def train_model(
@@ -126,35 +127,42 @@ def train_model(
     trainer.plot_history(show=False, save_path=history_path)
     cm_path = str(RESULTS_DIR / f"{model_name}_confusion_matrix.png")
     trainer.plot_confusion_matrix(show=False, save_path=cm_path, use_test=True)
-    metrics_path = RESULTS_DIR / f"{model_name}_metrics.txt"
-    with open(metrics_path, "w") as f:
-        f.write("==================================================\n")
-        f.write(f" {model_name.upper()} TRAINING RUN EVALUATION REPORT\n")
-        f.write("==================================================\n\n")
-        f.write("HYPERPARAMETERS:\n")
-        f.write("----------------\n")
-        f.write(f"Learning Rate: {lr}\n")
-        f.write(f"Max Epochs: {epochs}\n")
-        f.write(f"Final Epoch: {final_epoch}\n")
-        if model_name in ["cnn", "resnet"]:
-            f.write(f"Batch Size: {batch_size}\n")
-            f.write(f"Weight Decay: {weight_decay}\n")
-            f.write(f"Device: {device}\n")
-        elif model_name == "lgbm":
-            f.write(f"Num Leaves: {num_leaves}\n")
-            f.write(f"Max Depth: {max_depth}\n")
-        f.write(f"Patience: {patience}\n\n")
 
-        f.write("VALIDATION DATASET METRICS:\n")
-        f.write("---------------------------\n")
-        for k, v in val_metrics.items():
-            f.write(f"{k:<15} : {v:.6f}\n")
-        f.write("\n")
-        f.write("INDEPENDENT TEST DATASET METRICS (BLIND):\n")
-        f.write("-----------------------------------------\n")
-        for k, v in test_metrics.items():
-            f.write(f"{k:<15} : {v:.6f}\n")
-    LOGGER.info(f"Saved evaluation text report to: {metrics_path}")
+    metrics_path = RESULTS_DIR / f"{model_name}_metrics.json"
+
+    hyperparameters: dict[str, Any] = {
+        "learning_rate": lr,
+        "epochs": epochs,
+        "final_epoch": final_epoch,
+        "patience": patience,
+    }
+
+    if model_name in ["cnn", "resnet"]:
+        hyperparameters.update(
+            {
+                "batch_size": batch_size,
+                "weight_decay": weight_decay,
+                "device": device,
+            }
+        )
+    elif model_name == "lgbm":
+        hyperparameters.update(
+            {
+                "num_leaves": num_leaves,
+                "max_depth": max_depth,
+            }
+        )
+
+    metrics_data = {
+        "hyperparameters": hyperparameters,
+        "validation_metrics": val_metrics,
+        "test_metrics": test_metrics,
+    }
+
+    with open(metrics_path, "w") as f:
+        json.dump(metrics_data, f, indent=4)
+
+    LOGGER.info(f"Saved evaluation JSON report to: {metrics_path}")
 
 
 def main() -> None:

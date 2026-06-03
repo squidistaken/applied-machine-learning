@@ -1,6 +1,6 @@
-import re
+import json
 import os
-from typing import Any, Optional, cast
+from typing import Any, Optional
 from src.constants import RESULTS_DIR, DATA_DIR
 from src.data.download_data import DataDownloader
 from src.features.preprocess_pytorch import (
@@ -32,45 +32,37 @@ def parse_evaluation_report(
         tuple[Optional[ModelMetrics], dict[str, Any]]: A tuple containing the parsed metrics
             (if available and complete) and a dictionary of the hyperparameters used.
     """
-    metrics_file = RESULTS_DIR / f"{model_name.value}_metrics.txt"
+    json_metrics_file = RESULTS_DIR / f"{model_name.value}_metrics.json"
 
-    if not metrics_file.exists():
+    if not json_metrics_file.exists():
         return None, {}
 
-    with open(metrics_file, "r") as f:
-        content = f.read()
+    try:
+        with open(json_metrics_file, "r") as f:
+            data = json.load(f)
 
-    parsed_metrics = {}
-    for key in ["loss", "macro_f1", "precision", "recall"]:
-        match = re.search(rf"{key}\s*:\s*([0-9.]+)", content)
-        if match:
-            parsed_metrics[key] = float(match.group(1))
+        hyperparameters = data.get("hyperparameters", {})
+        metrics_dict = data.get("test_metrics") or data.get(
+            "validation_metrics"
+        )
 
-    if "loss" not in parsed_metrics and len(parsed_metrics) >= 3:
-        parsed_metrics["loss"] = None
+        metrics_data = None
+        if metrics_dict:
+            filtered_metrics: dict[str, Any] = {}
+            for key in ["loss", "macro_f1", "precision", "recall"]:
+                if key in metrics_dict:
+                    filtered_metrics[key] = metrics_dict[key]
 
-    metrics_data = None
-    if len(parsed_metrics) == 4:
-        data = cast(dict[str, Any], parsed_metrics)
-        metrics_data = ModelMetrics(**data)
+            if "loss" not in filtered_metrics and len(filtered_metrics) >= 3:
+                filtered_metrics["loss"] = None
 
-    hyperparameters = {}
-    hyperparams_section = re.search(
-        r"HYPERPARAMETERS:\n-+\n(.*?)\n\n", content, re.DOTALL
-    )
+            if len(filtered_metrics) >= 3:
+                metrics_data = ModelMetrics(**filtered_metrics)
 
-    if hyperparams_section:
-        for line in hyperparams_section.group(1).strip().split("\n"):
-            if ":" in line:
-                k, v = line.split(":", 1)
-                v_str = v.strip()
-                try:
-                    v_val = float(v_str) if "." in v_str else int(v_str)
-                except ValueError:
-                    v_val = v_str
-                hyperparameters[k.strip()] = v_val
-
-    return metrics_data, hyperparameters
+        return metrics_data, hyperparameters
+    except Exception:
+        # Worst case: The data is corrupted.
+        return None, {}
 
 
 def get_data_files(data_type: DataType, split: SplitType) -> list[dict]:
