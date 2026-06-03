@@ -1,9 +1,6 @@
-from src.constants import LOGGER
+import streamlit as st
 
-
-def main():
-    LOGGER.info("Hello from applied-machine-learning!")
-
-
-if __name__ == "__main__":
-    main()
+st.title("🎈 My new app")
+st.write(
+    "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
+)

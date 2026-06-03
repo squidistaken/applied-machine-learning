@@ -23,6 +23,7 @@ def train_model(
     max_depth: int = -1,
     weight_decay: float = 0.0,
     device: str = DEVICE,
+    enable_uq: bool = True,
 ) -> None:
     """
     Train a model.
@@ -39,9 +40,10 @@ def train_model(
         weight_decay (float): The weight decay (L2 penalty) (PyTorch only).
                               Defaults to 0.0.
         device (str): The device to run models on. Defaults to DEVICE.
+        enable_uq (bool): Whether to calculate calibration and Predictive Entropy metrics.
     """
     LOGGER.info(
-        f"Initializing training run for {model_name.upper()} on device: {device}..."
+        f"Initializing training run for {model_name.upper()} on device: {device} (UQ Enabled: {enable_uq})..."
     )
 
     if model_name in ["cnn", "resnet"]:
@@ -110,6 +112,7 @@ def train_model(
         test_data=test_data,
         batch_size=batch_size,
         device=device,
+        enable_uq=enable_uq,
     )
 
     LOGGER.info("Starting training...")
@@ -135,6 +138,7 @@ def train_model(
         "epochs": epochs,
         "final_epoch": final_epoch,
         "patience": patience,
+        "enable_uq": enable_uq,
     }
 
     if model_name in ["cnn", "resnet"]:
@@ -223,6 +227,13 @@ def main() -> None:
         default=DEVICE,
         help=f"Device to run PyTorch models on (default: {DEVICE}).",
     )
+    parser.add_argument(
+        "--no-uq",
+        dest="enable_uq",
+        action="store_false",
+        help="Disable slower Uncertainty Quantification metrics during validation loops for training speedup.",
+    )
+    parser.set_defaults(enable_uq=True)
 
     args = parser.parse_args()
 
@@ -251,6 +262,7 @@ def main() -> None:
         max_depth=args.max_depth,
         weight_decay=args.weight_decay,
         device=args.device,
+        enable_uq=args.enable_uq,
     )
 
 

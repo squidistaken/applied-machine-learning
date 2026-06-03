@@ -65,13 +65,21 @@ class BaseModel(ABC):
         ...
 
     @abstractmethod
-    def evaluate(self, x_test: Any, y_test: Any) -> Any:
+    def evaluate(
+        self,
+        x_test: Any,
+        y_test: Any = None,
+        enable_uq: bool = True,
+        **kwargs: Any,
+    ) -> Any:
         """
         Test the performance of the model.
 
         Args:
             x_test (Any): The testing data features.
             y_test (Any): The testing data true labels.
+            enable_uq (bool): Whether to calculate uncertainty metrics. Defaults to True.
+            **kwargs: The additional configuration.
 
         Returns:
             Any: Metric(s) indicating the performance.

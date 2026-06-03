@@ -165,6 +165,10 @@ class TrainRequest(BaseSchema):
     weight_decay: float = Field(
         0.0, description="Weight decay/L2 penalty (PyTorch models only)."
     )
+    enable_uq: bool = Field(
+        True,
+        description="Whether to evaluate and compute Uncertainty Quantification (UQ) metrics during training/validation splits.",
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -177,6 +181,7 @@ class TrainRequest(BaseSchema):
                 "num_leaves": 31,
                 "max_depth": -1,
                 "weight_decay": 1e-4,
+                "enable_uq": True,
             }
         }
     )
@@ -198,6 +203,15 @@ class ModelMetrics(BaseSchema):
     recall: float = Field(
         ..., ge=0.0, le=1.0, description="Macro-averaged Recall."
     )
+    ece: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Expected Calibration Error (ECE)."
+    )
+    predictive_entropy: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Average Predictive Entropy.",
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -206,6 +220,8 @@ class ModelMetrics(BaseSchema):
                 "macro_f1": 0.89,
                 "precision": 0.91,
                 "recall": 0.88,
+                "ece": 0.054,
+                "predictive_entropy": 0.32,
             }
         }
     )
@@ -244,12 +260,15 @@ class ModelObject(BaseSchema):
                     "learning_rate": 0.001,
                     "batch_size": 32,
                     "epochs": 20,
+                    "enable_uq": True,
                 },
                 "metrics": {
                     "loss": 0.21,
                     "macro_f1": 0.92,
                     "precision": 0.93,
                     "recall": 0.91,
+                    "ece": 0.048,
+                    "predictive_entropy": 0.28,
                 },
             }
         }
@@ -273,6 +292,17 @@ class ImageResults(BaseSchema):
         ...,
         description="Confidence scores (probabilities) for each possible class.",
     )
+    uncertainty: Optional[float] = Field(
+        None,
+        description="The predictive entropy representing total/aleatoric uncertainty.",
+    )
+    epistemic_variance: Optional[float] = Field(
+        None, description="The mean variance across MC Dropout passes."
+    )
+    is_uncertain: Optional[bool] = Field(
+        None,
+        description="Whether the predictive entropy exceeds a safe clinical threshold or not.",
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -285,6 +315,9 @@ class ImageResults(BaseSchema):
                     "BACTERIA": 0.85,
                     "VIRUS": 0.10,
                 },
+                "uncertainty": 0.52,
+                "epistemic_variance": 0.015,
+                "is_uncertain": False,
             }
         }
     )
