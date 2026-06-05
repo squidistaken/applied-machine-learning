@@ -27,3 +27,6 @@ DEVICE = (
     if torch.backends.mps.is_available()
     else "cpu"
 )
+API_URL = data.get("API_URL", "http://127.0.0.1:8000")
+STREAMLIT_URL = data.get("STREAMLIT_URL", "http://127.0.0.1:8501")
+TENSORBOARD_URL = data.get("TENSORBOARD_URL", "http://127.0.0.1:6006")

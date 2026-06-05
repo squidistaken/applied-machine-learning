@@ -18,7 +18,7 @@ services:
   tensorboard:
     build: .
     image: aml
-    command: ["uv", "run", "tensorboard", "--logdir", "logs/tensorboard", "--host", "0.0.0.0"]
+    command: ["uv", "run", "--no-sync", "tensorboard", "--logdir", "logs/tensorboard", "--host", "0.0.0.0"]
     ports:
       - "6006:6006"
     volumes:
@@ -27,10 +27,11 @@ services:
   streamlit:
     build: .
     image: aml
-    command: ["uv", "run", "streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    command: ["uv", "run", "--no-sync", "streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
     ports:
       - "8501:8501"
     volumes:
       - ./main.py:/app/main.py
       - ./config.yaml:/app/config.yaml
       - ./logs:/app/logs
+  
