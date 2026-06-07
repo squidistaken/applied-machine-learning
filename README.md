@@ -17,7 +17,10 @@ docker compose up
 
 This exposes the following ports:
  * `8000`: FastAPI application.
- * `6006`: Tensorflow application.
+ * `8501`: Streamlit dashboard.
+ * `6006`: TensorBoard.
+
+Once the stack is up, open the dashboard at [http://localhost:8501](http://localhost:8501).
 
 ## Development
 
@@ -31,6 +34,33 @@ uv sync
 ```
 
 3. Create a copy of [`example.config.yaml`](example.config.yaml) and rename it to `config.yaml`. Update the configuration, if desired.
+
+## Dashboard
+
+An interactive [Streamlit](https://streamlit.io/) dashboard wraps the FastAPI backend with four pages:
+
+ * **Introduction**: Project overview.
+ * **Data & Preprocessing**: Download the dataset, run the preprocessing pipeline, and compare the raw and preprocessed X-rays with a draggable before/after slider.
+ * **Model Training**: Configure a model, launch a run, watch validation metrics live, and review the saved metrics and evaluation plots.
+ * **Showcase**: Upload an X-ray and classify it. Results update live as you switch models, complete with an uncertainty (reliability) verdict.
+
+When running via Docker (`docker compose up`), the dashboard is served automatically at [http://localhost:8501](http://localhost:8501).
+
+To run it locally for development:
+
+1. Start the FastAPI backend — the dashboard talks to it exclusively:
+
+```bash
+uv run uvicorn src.api.router:app --port 8000
+```
+
+2. In a separate terminal, launch the dashboard:
+
+```bash
+uv run streamlit run main.py
+```
+
+The dashboard opens at [http://localhost:8501](http://localhost:8501) and expects the API at `API_URL` (default `http://127.0.0.1:8000`, configurable in `config.yaml`).
 
 ## Command Line Interface (CLI)
 

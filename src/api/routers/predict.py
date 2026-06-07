@@ -3,10 +3,12 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
-from src.constants import DEVICE
+from src.constants import DEVICE, MODELS_DIR
 from src.features.preprocess_lightgbm import extract_features, get_feature_names
+from src.features.image_preprocessor import ImagePreprocessor
 from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
+from src.models.base import BaseModel
 from src.models.cnn import CNN
 from src.models.resnet import ResNet
 from src.models.lgbm import LightGBM
@@ -15,8 +17,24 @@ from src.utils.uq_utils import (
     get_mc_dropout_uncertainty,
     calculate_predictive_entropy,
 )
+from src.utils.calibration import TemperatureScaler, probs_to_logits
 
 router = APIRouter(prefix="/predict", tags=["Inference"])
+
+
+def _load_temperature(model: BaseModel) -> float:
+    """Load the fitted temperature for a model.
+
+    Args:
+        model (BaseModel): The model whose calibration to look up.
+
+    Returns:
+        float: The fitted temperature, or 1.0 if none has been saved.
+    """
+    temp_path = MODELS_DIR / f"{model.__class__.__name__}_temperature.json"
+    if temp_path.exists():
+        return TemperatureScaler.load(temp_path).temperature
+    return 1.0
 
 
 @router.post(
@@ -70,8 +88,18 @@ async def predict_image(
             status_code=500, detail=f"Invalid or corrupt image file: {e}"
         )
 
+    try:
+        processed_array = ImagePreprocessor().process_image(np.array(img))
+        img = Image.fromarray(processed_array)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to preprocess image: {e}"
+        )
+
     uncertainty_score = 0.0
     epistemic_var = 0.0
+    aleatoric_uncertainty = 0.0
+    epistemic_uncertainty = 0.0
     is_uncertain = False
 
     # Forward Pass via PyTorch Models.
@@ -101,15 +129,23 @@ async def predict_image(
         transform = ChestXRayDatasetPyTorch.compose_transforms(augment=False)
         img_tensor = transform(img).unsqueeze(0).to(DEVICE)
 
-        mean_probs_tensor, variance_tensor, entropy_tensor = (
-            get_mc_dropout_uncertainty(model=model, x=img_tensor, num_passes=15)
+        temperature = _load_temperature(model)
+        mean_probs_tensor, variance_tensor, uncertainty = (
+            get_mc_dropout_uncertainty(
+                model=model,
+                x=img_tensor,
+                num_passes=15,
+                temperature=temperature,
+            )
         )
 
         probs = mean_probs_tensor.cpu().numpy()[0]
         variance = variance_tensor.cpu().numpy()[0]
 
         epistemic_var = float(np.mean(variance))
-        uncertainty_score = float(entropy_tensor.cpu().numpy()[0])
+        uncertainty_score = float(uncertainty["total"].cpu().numpy()[0])
+        aleatoric_uncertainty = float(uncertainty["aleatoric"].cpu().numpy()[0])
+        epistemic_uncertainty = float(uncertainty["epistemic"].cpu().numpy()[0])
 
     elif model_name == ModelType.LGBM:
         try:
@@ -140,13 +176,23 @@ async def predict_image(
 
         probs = np.asarray(model.model.predict(feats_df))[0]
 
+        # Apply post-hoc temperature scaling if a calibrator was fit.
+        temperature = _load_temperature(model)
+        if temperature != 1.0:
+            scaler = TemperatureScaler(temperature=temperature)
+            probs = scaler.predict_proba(
+                probs_to_logits(np.expand_dims(probs, axis=0))
+            )[0]
+
         uncertainty_score = float(
             calculate_predictive_entropy(np.expand_dims(probs, axis=0))[0]
         )
 
-        # Ensemble variance not applicable in standard LightGBM boosting
-        # sequence.
+        # A single boosted prediction has no MC samples to disagree, so all of
+        # the uncertainty is treated as aleatoric and epistemic terms are zero.
         epistemic_var = 0.0
+        aleatoric_uncertainty = uncertainty_score
+        epistemic_uncertainty = 0.0
 
     # Threshold 0.75 maps to cases where model predictions approach flat
     # distributions.
@@ -169,6 +215,8 @@ async def predict_image(
         predicted_class=predicted_class,
         probabilities=prob_dict,
         uncertainty=uncertainty_score,
+        aleatoric_uncertainty=aleatoric_uncertainty,
+        epistemic_uncertainty=epistemic_uncertainty,
         epistemic_variance=epistemic_var,
         is_uncertain=is_uncertain,
     )

@@ -209,8 +209,17 @@ class ModelMetrics(BaseSchema):
     predictive_entropy: Optional[float] = Field(
         None,
         ge=0.0,
-        le=1.0,
-        description="Average Predictive Entropy.",
+        description="Average Predictive Entropy (in nats; max is ln(num_classes)).",
+    )
+    brier_score: Optional[float] = Field(
+        None,
+        ge=0.0,
+        description="Multiclass Brier score.",
+    )
+    nll: Optional[float] = Field(
+        None,
+        ge=0.0,
+        description="Mean negative log-likelihood.",
     )
 
     model_config = ConfigDict(
@@ -222,6 +231,8 @@ class ModelMetrics(BaseSchema):
                 "recall": 0.88,
                 "ece": 0.054,
                 "predictive_entropy": 0.32,
+                "brier_score": 0.21,
+                "nll": 0.36,
             }
         }
     )
@@ -294,7 +305,15 @@ class ImageResults(BaseSchema):
     )
     uncertainty: Optional[float] = Field(
         None,
-        description="The predictive entropy representing total/aleatoric uncertainty.",
+        description="The total predictive entropy (entropy of the mean MC-Dropout prediction).",
+    )
+    aleatoric_uncertainty: Optional[float] = Field(
+        None,
+        description="The aleatoric (data) uncertainty: the mean entropy across MC-Dropout passes.",
+    )
+    epistemic_uncertainty: Optional[float] = Field(
+        None,
+        description="The epistemic (model) uncertainty: mutual information/BALD (total - aleatoric).",
     )
     epistemic_variance: Optional[float] = Field(
         None, description="The mean variance across MC Dropout passes."
@@ -316,6 +335,8 @@ class ImageResults(BaseSchema):
                     "VIRUS": 0.10,
                 },
                 "uncertainty": 0.52,
+                "aleatoric_uncertainty": 0.48,
+                "epistemic_uncertainty": 0.04,
                 "epistemic_variance": 0.015,
                 "is_uncertain": False,
             }
@@ -403,6 +424,71 @@ class BackgroundJobResponse(BaseSchema):
         json_schema_extra={
             "example": {
                 "message": "Dataset download initiated in the background."
+            }
+        }
+    )
+
+
+class JobStatusResponse(BaseSchema):
+    """Schema class for the live status of a background job (data/training)."""
+
+    status: str = Field(
+        ...,
+        description="Lifecycle status: idle, running, completed, or failed.",
+    )
+    progress: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Fractional completion in [0, 1], or null when indeterminate.",
+    )
+    message: str = Field(
+        "", description="Human-readable description of the current step."
+    )
+    history: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Per-step metric records, used to draw live training curves.",
+    )
+    error: Optional[str] = Field(
+        None, description="Error message if the job failed."
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status": "running",
+                "progress": 0.45,
+                "message": "Epoch 9/20",
+                "history": [
+                    {"epoch": 1, "train_loss": 1.02, "eval_loss": 0.98}
+                ],
+                "error": None,
+            }
+        }
+    )
+
+
+class PlotListResponse(BaseSchema):
+    """Schema class listing the evaluation plots available for a model."""
+
+    model_name: ModelType = Field(
+        ..., description="The model the plots belong to."
+    )
+    plots: List[str] = Field(
+        ...,
+        description="Identifiers of the generated plots available for download.",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "model_name": "cnn",
+                "plots": [
+                    "training_history",
+                    "confusion_matrix",
+                    "reliability_diagram",
+                    "selective_prediction",
+                ],
             }
         }
     )

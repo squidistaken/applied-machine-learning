@@ -8,7 +8,12 @@ from pathlib import Path
 from src.models.base import BaseModel
 from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 from src.constants import LOGGER
-from src.utils.uq_utils import calculate_ece, calculate_predictive_entropy
+from src.utils.uq_utils import (
+    calculate_ece,
+    calculate_predictive_entropy,
+    calculate_brier_score,
+    calculate_nll,
+)
 
 
 class CNN(BaseModel, nn.Module):
@@ -199,9 +204,13 @@ class CNN(BaseModel, nn.Module):
             ece = calculate_ece(all_labels_np, all_probs_np)
             entropies = calculate_predictive_entropy(all_probs_np)
             mean_entropy = float(np.mean(entropies))
+            brier = calculate_brier_score(all_labels_np, all_probs_np)
+            nll = calculate_nll(all_labels_np, all_probs_np)
         else:
             ece = 0.0
             mean_entropy = 0.0
+            brier = 0.0
+            nll = 0.0
 
         metrics = {
             "macro_f1": float(macro_f1),
@@ -209,6 +218,8 @@ class CNN(BaseModel, nn.Module):
             "recall": float(recall),
             "ece": float(ece),
             "predictive_entropy": float(mean_entropy),
+            "brier_score": float(brier),
+            "nll": float(nll),
         }
 
         return metrics

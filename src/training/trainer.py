@@ -2,7 +2,7 @@ from src.models.cnn import CNN
 import copy
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +24,15 @@ from src.constants import DEVICE, LOGGER, LOGS_DIR, RESULTS_DIR
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
 from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 from src.models.base import BaseModel
-from src.utils.uq_utils import calculate_ece, calculate_predictive_entropy
+from src.utils.uq_utils import (
+    calculate_ece,
+    calculate_predictive_entropy,
+    calculate_brier_score,
+    calculate_nll,
+    compute_reliability_curve,
+    selective_prediction_curve,
+)
+from src.utils.calibration import TemperatureScaler, probs_to_logits
 
 plt.style.use("seaborn-v0_8-dark-palette")
 plt.rcParams.update(
@@ -172,6 +180,7 @@ class Trainer:
             "eval_precision": [],
             "eval_recall": [],
             "eval_ece": [],
+            "eval_brier": [],
             "eval_predictive_entropy": [],
         }
 
@@ -180,6 +189,7 @@ class Trainer:
         num_epochs: int = 10,
         learning_rate: float = 1e-3,
         patience: int = 3,
+        epoch_callback: Optional[Callable[[int, int, dict], None]] = None,
     ) -> None:
         """Train the model.
 
@@ -187,15 +197,25 @@ class Trainer:
             num_epochs (int): The number of training epochs or boosting rounds. Defaults to 10.
             learning_rate (float): The initial learning step increment for PyTorch optimizers. Defaults to 1e-3.
             patience (int): The patience level before early stopping. Defaults to 3.
+            epoch_callback (Optional[Callable[[int, int, dict], None]]): Called as
+                ``(current_epoch, total_epochs, metrics)`` at the end of each
+                epoch/boosting round, to support live progress reporting.
         """
         self.reset_history()
 
         if self.is_pytorch:
-            self._train_pytorch(num_epochs, learning_rate, patience)
+            self._train_pytorch(
+                num_epochs, learning_rate, patience, epoch_callback
+            )
         else:
-            self._train_lightgbm(num_epochs, patience)
+            self._train_lightgbm(num_epochs, patience, epoch_callback)
 
-    def _train_lightgbm(self, num_epochs: int, patience: int) -> None:
+    def _train_lightgbm(
+        self,
+        num_epochs: int,
+        patience: int,
+        epoch_callback: Optional[Callable[[int, int, dict], None]] = None,
+    ) -> None:
         """Train the LightGBM model.
 
         Args:
@@ -215,6 +235,7 @@ class Trainer:
             patience=patience,
             evals_result=evals_result,
             enable_uq=self.enable_uq,
+            epoch_callback=epoch_callback,
         )
 
         if not evals_result:
@@ -235,6 +256,7 @@ class Trainer:
 
         if self.enable_uq:
             self.history["eval_ece"] = val_res.get("ece", [])
+            self.history["eval_brier"] = val_res.get("brier", [])
             self.history["eval_predictive_entropy"] = val_res.get(
                 "predictive_entropy", []
             )
@@ -264,7 +286,13 @@ class Trainer:
             if self.enable_uq:
                 if i < len(self.history["eval_ece"]):
                     self.writer.add_scalar(
-                        "Uncertainty/ece", self.history["eval_ece"][i], i
+                        "Calibration/ece", self.history["eval_ece"][i], i
+                    )
+                if i < len(self.history["eval_brier"]):
+                    self.writer.add_scalar(
+                        "Calibration/brier_score",
+                        self.history["eval_brier"][i],
+                        i,
                     )
                 if i < len(self.history["eval_predictive_entropy"]):
                     self.writer.add_scalar(
@@ -276,7 +304,11 @@ class Trainer:
         self.writer.close()
 
     def _train_pytorch(
-        self, num_epochs: int, learning_rate: float, patience: int
+        self,
+        num_epochs: int,
+        learning_rate: float,
+        patience: int,
+        epoch_callback: Optional[Callable[[int, int, dict], None]] = None,
     ) -> None:
         """Train the PyTorch model(s).
 
@@ -337,6 +369,7 @@ class Trainer:
             self.history["eval_precision"].append(eval_metrics["precision"])
             self.history["eval_recall"].append(eval_metrics["recall"])
             self.history["eval_ece"].append(eval_metrics["ece"])
+            self.history["eval_brier"].append(eval_metrics["brier_score"])
             self.history["eval_predictive_entropy"].append(
                 eval_metrics["predictive_entropy"]
             )
@@ -355,7 +388,12 @@ class Trainer:
 
             if self.enable_uq:
                 self.writer.add_scalar(
-                    "Uncertainty/ece", eval_metrics["ece"], epoch
+                    "Calibration/ece", eval_metrics["ece"], epoch
+                )
+                self.writer.add_scalar(
+                    "Calibration/brier_score",
+                    eval_metrics["brier_score"],
+                    epoch,
                 )
                 self.writer.add_scalar(
                     "Uncertainty/predictive_entropy",
@@ -368,8 +406,16 @@ class Trainer:
                 f"Train Loss: {avg_train_loss:.4f} | "
                 f"Eval Loss: {eval_metrics['loss']:.4f} | "
                 f"Macro-F1: {eval_metrics['macro_f1']:.4f} | "
-                f"ECE: {eval_metrics['ece']:.4f}"
+                f"ECE: {eval_metrics['ece']:.4f} | "
+                f"Brier: {eval_metrics['brier_score']:.4f}"
             )
+
+            if epoch_callback is not None:
+                epoch_callback(
+                    epoch + 1,
+                    num_epochs,
+                    {"train_loss": avg_train_loss, **eval_metrics},
+                )
 
             if eval_metrics["loss"] < best_eval_loss:
                 best_eval_loss = eval_metrics["loss"]
@@ -526,9 +572,13 @@ class Trainer:
             ece = calculate_ece(all_labels_np, all_probs_np)
             entropies = calculate_predictive_entropy(all_probs_np)
             mean_entropy = float(np.mean(entropies))
+            brier = calculate_brier_score(all_labels_np, all_probs_np)
+            nll = calculate_nll(all_labels_np, all_probs_np)
         else:
             ece = 0.0
             mean_entropy = 0.0
+            brier = 0.0
+            nll = 0.0
 
         return {
             "loss": float(avg_loss),
@@ -537,9 +587,256 @@ class Trainer:
             "recall": float(recall),
             "ece": float(ece),
             "predictive_entropy": float(mean_entropy),
+            "brier_score": float(brier),
+            "nll": float(nll),
         }
 
-    def plot_history(self, show: bool = False) -> None:
+    def _collect_outputs(
+        self, use_test: bool = False
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Collect labels, probabilities and logits for a dataset split.
+
+        Args:
+            use_test (bool): Whether to use the test split. Defaults to False.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray, np.ndarray]: A tuple containing the
+                                                       true labels, the
+                                                       predicted probabilities,
+                                                       and the logits.
+        """
+        if not self.is_pytorch:
+            dataset = self.test_data if use_test else self.eval_data
+            if not isinstance(dataset, ChestXRayDatasetLightGBM):
+                raise TypeError(
+                    f"Expected ChestXRayDatasetLightGBM, but got {type(dataset)}"
+                )
+            X, y = dataset.get_data()
+            booster = getattr(self.model, "model", None)
+            if booster is None:
+                raise ValueError("LightGBM model is not trained yet.")
+            probs = np.asarray(booster.predict(X))
+            labels = y.to_numpy() if hasattr(y, "to_numpy") else np.array(y)
+            return labels, probs, probs_to_logits(probs)
+
+        pytorch_model = cast(nn.Module, self.model)
+        loader = (
+            self.test_loader
+            if (use_test and self.test_loader is not None)
+            else self.eval_loader
+        )
+
+        pytorch_model.eval()
+        all_logits = []
+        all_labels = []
+
+        with torch.no_grad():
+            for inputs, labels in tqdm(
+                loader, desc="Collecting outputs...", leave=False
+            ):
+                inputs = inputs.to(self.device)
+                logits = pytorch_model(inputs)
+                all_logits.extend(logits.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+
+        logits_np = np.array(all_logits)
+        labels_np = np.array(all_labels)
+
+        # Stable softmax to recover probabilities from the raw logits.
+        shifted = logits_np - logits_np.max(axis=1, keepdims=True)
+        exp = np.exp(shifted)
+        probs_np = exp / exp.sum(axis=1, keepdims=True)
+
+        return labels_np, probs_np, logits_np
+
+    def fit_temperature_scaler(self) -> TemperatureScaler:
+        """Fit a temperature scaler on the validation split.
+
+        Returns:
+            TemperatureScaler: A fitted scaler.
+        """
+        labels, _, logits = self._collect_outputs(use_test=False)
+        scaler = TemperatureScaler().fit(logits, labels)
+        LOGGER.info(f"Fitted temperature scaling: T = {scaler.temperature:.4f}")
+        return scaler
+
+    def uq_report(
+        self,
+        use_test: bool = True,
+        calibrator: Optional[TemperatureScaler] = None,
+    ) -> dict[str, float]:
+        """Compute an uncertainty/calibration report for a split.
+
+        Args:
+            use_test (bool): Whether to use the test split. Defaults to True.
+            calibrator (Optional[TemperatureScaler]): The calibrated metrics.
+
+        Returns:
+            dict[str, float]: A metric(s).
+        """
+        labels, probs, logits = self._collect_outputs(use_test=use_test)
+
+        report = {
+            "ece": calculate_ece(labels, probs),
+            "brier_score": calculate_brier_score(labels, probs),
+            "nll": calculate_nll(labels, probs),
+            "aurc": float(selective_prediction_curve(labels, probs)["aurc"]),
+        }
+
+        if calibrator is not None:
+            cal_probs = calibrator.predict_proba(logits)
+            report["temperature"] = float(calibrator.temperature)
+            report["ece_calibrated"] = calculate_ece(labels, cal_probs)
+            report["brier_score_calibrated"] = calculate_brier_score(
+                labels, cal_probs
+            )
+            report["nll_calibrated"] = calculate_nll(labels, cal_probs)
+
+        return report
+
+    def plot_reliability_diagram(
+        self,
+        use_test: bool = True,
+        show: bool = False,
+        calibrator: Optional[TemperatureScaler] = None,
+        num_bins: int = 10,
+    ) -> None:
+        """Plot a reliability diagram (confidence vs. accuracy).
+
+        Args:
+            use_test (bool): Whether to use the test split. Defaults to True.
+            show (bool): Whether to display the figure. Defaults to False.
+            calibrator (Optional[TemperatureScaler]): The calibrator to overlay.
+            num_bins (int): The number of confidence bins. Defaults to 10.
+        """
+        if not self.enable_uq:
+            LOGGER.warning("enable_uq is False; skipping reliability diagram.")
+            return
+
+        labels, probs, logits = self._collect_outputs(use_test=use_test)
+        curve = compute_reliability_curve(labels, probs, num_bins)
+        ece = calculate_ece(labels, probs, num_bins)
+
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.plot(
+            [0, 1],
+            [0, 1],
+            linestyle="--",
+            color="gray",
+            label="Perfect calibration",
+        )
+        ax.plot(
+            curve["bin_confidence"],
+            curve["bin_accuracy"],
+            marker="o",
+            color="crimson",
+            label=f"Uncalibrated (ECE={ece:.3f})",
+        )
+
+        if calibrator is not None:
+            cal_probs = calibrator.predict_proba(logits)
+            cal_curve = compute_reliability_curve(labels, cal_probs, num_bins)
+            cal_ece = calculate_ece(labels, cal_probs, num_bins)
+            ax.plot(
+                cal_curve["bin_confidence"],
+                cal_curve["bin_accuracy"],
+                marker="s",
+                color="forestgreen",
+                label=(
+                    f"Calibrated, T={calibrator.temperature:.2f} "
+                    f"(ECE={cal_ece:.3f})"
+                ),
+            )
+
+        ax.set_xlabel("Confidence")
+        ax.set_ylabel("Accuracy")
+        ax.set_title("Reliability Diagram")
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.legend(loc="upper left")
+        fig.tight_layout()
+
+        if hasattr(self, "writer") and self.writer is not None:
+            self.writer.add_figure(
+                "Evaluation/Reliability_Diagram", fig, global_step=0
+            )
+
+        model_name = self.model.__class__.__name__
+        suffix = "test" if use_test else "val"
+        save_path = (
+            Path(RESULTS_DIR) / f"{model_name}_reliability_diagram_{suffix}.png"
+        )
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path)
+        LOGGER.info(f"Reliability diagram saved to {save_path}")
+
+        if show:
+            plt.show()
+        else:
+            plt.close(fig)
+
+    def plot_selective_prediction(
+        self,
+        use_test: bool = True,
+        show: bool = False,
+    ) -> None:
+        """Plot the selective-prediction (accuracy-rejection) curve.
+
+        Args:
+            use_test (bool): Whether to use the test split. Defaults to True.
+            show (bool): Whether to display the figure. Defaults to False.
+        """
+        if not self.enable_uq:
+            LOGGER.warning(
+                "enable_uq is False; skipping selective-prediction plot."
+            )
+            return
+
+        labels, probs, _ = self._collect_outputs(use_test=use_test)
+        # Rank by predictive entropy so abstention uses the same signal the API
+        # reports as its uncertainty score.
+        entropy = calculate_predictive_entropy(probs)
+        curve = selective_prediction_curve(labels, probs, uncertainty=entropy)
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(
+            curve["coverage"],
+            curve["accuracy"],
+            marker="o",
+            color="crimson",
+            label=f"Accuracy (AURC={curve['aurc']:.3f})",
+        )
+        ax.set_xlabel("Coverage (fraction of most confident predictions kept)")
+        ax.set_ylabel("Accuracy on kept predictions")
+        ax.set_title("Selective Prediction: Accuracy vs. Coverage")
+        ax.set_xlim(0, 1)
+        ax.legend(loc="lower left")
+        fig.tight_layout()
+
+        if hasattr(self, "writer") and self.writer is not None:
+            self.writer.add_figure(
+                "Evaluation/Selective_Prediction", fig, global_step=0
+            )
+
+        model_name = self.model.__class__.__name__
+        suffix = "test" if use_test else "val"
+        save_path = (
+            Path(RESULTS_DIR)
+            / f"{model_name}_selective_prediction_{suffix}.png"
+        )
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path)
+        LOGGER.info(f"Selective-prediction plot saved to {save_path}")
+
+        if show:
+            plt.show()
+        else:
+            plt.close(fig)
+
+    def plot_history(
+        self,
+        show: bool = False,
+    ) -> None:
         """Plot the history.
 
         Args:
@@ -614,6 +911,14 @@ class Trainer:
                         label="Expected Calibration Error (ECE)",
                         marker="x",
                         color="purple",
+                    )
+                if self.history.get("eval_brier"):
+                    ax2.plot(
+                        eval_epochs_range,
+                        self.history["eval_brier"],
+                        label="Brier Score",
+                        marker="P",
+                        color="teal",
                     )
                 if self.history.get("eval_predictive_entropy"):
                     ax2.plot(

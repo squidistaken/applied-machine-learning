@@ -7,6 +7,9 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./results:/app/results
     deploy:
       resources:
         reservations:
@@ -34,4 +37,5 @@ services:
       - ./main.py:/app/main.py
       - ./config.yaml:/app/config.yaml
       - ./logs:/app/logs
-  
+      - ./src:/app/src
+      - ./assets:/app/assets

@@ -1,13 +1,15 @@
 from typing import cast
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Path as APIPath
 from src.constants import DEVICE
-import src.training.train
+from src.api import job_state
+from src.utils.api_utils import train_task
 
 from src.api.schema import (
     ModelType,
     TrainRequest,
     TrainingStatus,
     TrainResponse,
+    JobStatusResponse,
 )
 
 router = APIRouter(prefix="/train", tags=["Training"])
@@ -48,7 +50,7 @@ async def train_model(
             lr = 0.1
 
     background_tasks.add_task(
-        func=src.training.train.train_model,
+        func=train_task,
         model_name=request.model_name.value,
         epochs=cast(int, epochs),
         lr=cast(float, lr),
@@ -69,3 +71,23 @@ async def train_model(
         learning_rate=cast(float, lr),
         status=TrainingStatus.TRAINING,
     )
+
+
+@router.get(
+    "/status/{model_name}",
+    response_model=JobStatusResponse,
+    summary="Get Live Training Progress",
+    description="Poll the live status of a training job, including per-epoch "
+    "validation metrics collected so far, to drive a progress bar and live "
+    "metric charts.",
+    response_description="A JobStatusResponse with progress, message and history.",
+)
+async def get_training_status(
+    model: ModelType = APIPath(
+        ...,
+        description="The model architecture being trained.",
+        alias="model_name",
+    ),
+) -> JobStatusResponse:
+    state = job_state.get_job(model.value)
+    return JobStatusResponse(**state)
