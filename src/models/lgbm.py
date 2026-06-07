@@ -1,9 +1,13 @@
-from src.utils.uq_utils import calculate_ece
+from src.utils.uq_utils import (
+    calculate_ece,
+    calculate_brier_score,
+    calculate_nll,
+)
 import lightgbm as lgb
 import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 from pathlib import Path
-from typing import Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 import pandas as pd
 from src.models.base import BaseModel
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
@@ -95,6 +99,7 @@ class LightGBM(BaseModel):
         patience: int = 3,
         evals_result: Optional[dict] = None,
         enable_uq: bool = True,
+        epoch_callback: Optional[Callable[[int, int, dict], None]] = None,
         **kwargs,
     ) -> None:
         """
@@ -112,6 +117,7 @@ class LightGBM(BaseModel):
             patience (int): Early stopping patience threshold.
             evals_result (Optional[dict]): Dictionary to store evaluation history.
             enable_uq (bool): Whether to enable uncertainty quantification. Defaults to True.
+            epoch_callback (Optional[Callable[[int, int, dict], None]]): The epoch callback.
             **kwargs: The additional hyperparameters or configuration.
         """
         if x_train is not None and y_train is not None:
@@ -177,9 +183,11 @@ class LightGBM(BaseModel):
                         ece = float(calculate_ece(val_y_np, preds))
                         entropies = calculate_predictive_entropy(preds)
                         mean_entropy = float(np.mean(entropies))
+                        brier = float(calculate_brier_score(val_y_np, preds))
                     else:
                         ece = 0.0
                         mean_entropy = 0.0
+                        brier = 0.0
 
                     if evals_result is not None:
                         if "val" not in evals_result:
@@ -192,6 +200,8 @@ class LightGBM(BaseModel):
                             evals_result["val"]["recall"] = []
                         if "ece" not in evals_result["val"]:
                             evals_result["val"]["ece"] = []
+                        if "brier" not in evals_result["val"]:
+                            evals_result["val"]["brier"] = []
                         if "predictive_entropy" not in evals_result["val"]:
                             evals_result["val"]["predictive_entropy"] = []
 
@@ -199,11 +209,37 @@ class LightGBM(BaseModel):
                         evals_result["val"]["precision"].append(prec)
                         evals_result["val"]["recall"].append(rec)
                         evals_result["val"]["ece"].append(ece)
+                        evals_result["val"]["brier"].append(brier)
                         evals_result["val"]["predictive_entropy"].append(
                             mean_entropy
                         )
 
                 callbacks.append(record_custom_metrics)
+
+        if epoch_callback is not None:
+
+            def report_progress(env):
+                metrics: dict = {}
+                val_res = (
+                    evals_result.get("val", {})
+                    if evals_result is not None
+                    else {}
+                )
+                for key in [
+                    "multi_logloss",
+                    "macro_f1",
+                    "precision",
+                    "recall",
+                    "ece",
+                ]:
+                    series = val_res.get(key)
+                    if series:
+                        # Rename loss for a consistent live-chart schema.
+                        out_key = "eval_loss" if key == "multi_logloss" else key
+                        metrics[out_key] = float(series[-1])
+                epoch_callback(env.iteration + 1, num_boost_round, metrics)
+
+            callbacks.append(report_progress)
 
         LOGGER.info("Training LightGBM model...")
 
@@ -270,9 +306,13 @@ class LightGBM(BaseModel):
             ece = calculate_ece(y_test_np, y_pred_prob)
             entropies = calculate_predictive_entropy(y_pred_prob)
             mean_entropy = float(np.mean(entropies))
+            brier = calculate_brier_score(y_test_np, y_pred_prob)
+            nll = calculate_nll(y_test_np, y_pred_prob)
         else:
             ece = 0.0
             mean_entropy = 0.0
+            brier = 0.0
+            nll = 0.0
 
         metrics = {
             "macro_f1": float(macro_f1),
@@ -280,6 +320,8 @@ class LightGBM(BaseModel):
             "recall": float(recall),
             "ece": float(ece),
             "predictive_entropy": float(mean_entropy),
+            "brier_score": float(brier),
+            "nll": float(nll),
         }
 
         LOGGER.info(f"Evaluation metrics: {metrics}")

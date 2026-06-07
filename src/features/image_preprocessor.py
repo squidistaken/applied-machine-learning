@@ -124,6 +124,22 @@ class ImagePreprocessor:
 
         return clahe.apply(image)
 
+    def process_image(self, image: np.ndarray) -> np.ndarray:
+        """
+        Run the preprocessing pipeline on an in-memory grayscale image.
+
+        Args:
+            image (np.ndarray): The input 8-bit grayscale image array.
+
+        Returns:
+            np.ndarray: A preprocessed 8-bit image.
+        """
+        cropped_image = self.extract_lung_region(image)
+        resized_image = self.resize(cropped_image)
+        clahe_image = self.apply_clahe(resized_image)
+
+        return clahe_image
+
     def run(self, image_path: str) -> np.ndarray:
         """
         Run the image preprocessing pipeline.
@@ -141,11 +157,7 @@ class ImagePreprocessor:
 
             raise ValueError(f"Failed to load image from {image_path}")
 
-        cropped_image = self.extract_lung_region(image)
-        resized_image = self.resize(cropped_image)
-        clahe_image = self.apply_clahe(resized_image)
-
-        return clahe_image
+        return self.process_image(image)
 
     @staticmethod
     def save_image(image: np.ndarray, path: str, format: str = "pgm") -> None:

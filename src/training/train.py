@@ -1,9 +1,9 @@
 import argparse
 import copy
-from typing import Literal, Any
+from typing import Callable, Literal, Any, Optional
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
-from src.constants import LOGGER, DEVICE, RESULTS_DIR
+from src.constants import LOGGER, DEVICE, RESULTS_DIR, MODELS_DIR
 from src.data.dataset_pytorch import ChestXRayDatasetPyTorch
 from src.data.dataset_lightgbm import ChestXRayDatasetLightGBM
 from src.models.cnn import CNN
@@ -24,6 +24,7 @@ def train_model(
     weight_decay: float = 0.0,
     device: str = DEVICE,
     enable_uq: bool = True,
+    on_epoch_end: Optional[Callable[[int, int, dict], None]] = None,
 ) -> None:
     """
     Train a model.
@@ -41,6 +42,9 @@ def train_model(
                               Defaults to 0.0.
         device (str): The device to run models on. Defaults to DEVICE.
         enable_uq (bool): Whether to calculate calibration and Predictive Entropy metrics.
+        on_epoch_end (Optional[Callable[[int, int, dict], None]]): Called as
+            ``(current_epoch, total_epochs, metrics)`` at the end of each epoch
+            for live progress reporting.
     """
     LOGGER.info(
         f"Initializing training run for {model_name.upper()} on device: {device} (UQ Enabled: {enable_uq})..."
@@ -116,7 +120,12 @@ def train_model(
     )
 
     LOGGER.info("Starting training...")
-    trainer.train(num_epochs=epochs, learning_rate=lr, patience=patience)
+    trainer.train(
+        num_epochs=epochs,
+        learning_rate=lr,
+        patience=patience,
+        epoch_callback=on_epoch_end,
+    )
     final_epoch = len(trainer.history["train_loss"])
     LOGGER.info("Evaluating validation dataset performance...")
     val_metrics = trainer.evaluate(use_test=False)
@@ -126,10 +135,22 @@ def train_model(
     LOGGER.info(f"Final Test Metrics: {test_metrics}")
     trainer.model.save_model()
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    history_path = str(RESULTS_DIR / f"{model_name}_training_history.png")
-    trainer.plot_history(show=False, save_path=history_path)
-    cm_path = str(RESULTS_DIR / f"{model_name}_confusion_matrix.png")
-    trainer.plot_confusion_matrix(show=False, save_path=cm_path, use_test=True)
+    trainer.plot_history(show=False)
+    trainer.plot_confusion_matrix(show=False, use_test=True)
+
+    calibration_report = None
+
+    if enable_uq:
+        scaler = trainer.fit_temperature_scaler()
+        temp_path = MODELS_DIR / f"{model.__class__.__name__}_temperature.json"
+        scaler.save(temp_path)
+        LOGGER.info(f"Saved temperature scaler to: {temp_path}")
+
+        trainer.plot_reliability_diagram(use_test=True, calibrator=scaler)
+        trainer.plot_selective_prediction(use_test=True)
+
+        calibration_report = trainer.uq_report(use_test=True, calibrator=scaler)
+        LOGGER.info(f"Calibration report (test): {calibration_report}")
 
     metrics_path = RESULTS_DIR / f"{model_name}_metrics.json"
 
@@ -162,6 +183,9 @@ def train_model(
         "validation_metrics": val_metrics,
         "test_metrics": test_metrics,
     }
+
+    if calibration_report is not None:
+        metrics_data["calibration"] = calibration_report
 
     with open(metrics_path, "w") as f:
         json.dump(metrics_data, f, indent=4)

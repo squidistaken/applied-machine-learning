@@ -1,11 +1,18 @@
+import io
+import numpy as np
+from PIL import Image
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Query,
     Path as APIPath,
     HTTPException,
+    UploadFile,
+    File,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from src.api import job_state
+from src.features.image_preprocessor import ImagePreprocessor
 from src.utils.api_utils import get_data_files, download_task, preprocess_task
 from src.api.schema import (
     DataType,
@@ -15,6 +22,7 @@ from src.api.schema import (
     DataMetadata,
     PaginatedDataResponse,
     BackgroundJobResponse,
+    JobStatusResponse,
 )
 
 router = APIRouter(prefix="/data", tags=["Data Management"])
@@ -65,6 +73,72 @@ async def preprocess_data(
     return BackgroundJobResponse(
         message=f"Preprocessing pipeline '{request.pipeline.value}' initiated in the background."
     )
+
+
+@router.get(
+    "/status/{job}",
+    response_model=JobStatusResponse,
+    summary="Get Data Pipeline Progress",
+    description="Poll the live status of a background data job ('download' or "
+    "'preprocess') to drive a progress bar.",
+    response_description="A JobStatusResponse with progress and status message.",
+)
+async def get_data_status(
+    job: str = APIPath(
+        ...,
+        description="The data job to query ('download' or 'preprocess').",
+        pattern="^(download|preprocess)$",
+    ),
+) -> JobStatusResponse:
+    return JobStatusResponse(**job_state.get_job(job))
+
+
+@router.post(
+    "/preview",
+    summary="Preview Image Preprocessing",
+    description="Upload a raw chest X-ray and receive the preprocessed image "
+    "(lung-region crop, resize, and CLAHE) exactly as the models see it. "
+    "Useful for visualising the before/after of the preprocessing pipeline.",
+    response_description="The preprocessed image as a PNG stream.",
+    responses={
+        200: {
+            "content": {"image/png": {}},
+            "description": "Preprocessed image.",
+        },
+        400: {"description": "Unsupported or invalid image file."},
+    },
+)
+async def preview_preprocessing(
+    file: UploadFile = File(
+        ..., description="Chest X-Ray image file (png, jpg, jpeg, pgm)."
+    ),
+) -> StreamingResponse:
+    if not file.filename:
+        raise HTTPException(
+            status_code=400, detail="File must have a valid filename."
+        )
+
+    allowed_extensions = ["png", "jpg", "jpeg", "pgm"]
+    extension = file.filename.split(".")[-1].lower()
+    if extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Please upload one of: {allowed_extensions}",
+        )
+
+    contents = await file.read()
+    try:
+        img = Image.open(io.BytesIO(contents)).convert("L")
+        processed = ImagePreprocessor().process_image(np.array(img))
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail=f"Failed to preprocess image: {e}"
+        )
+
+    buffer = io.BytesIO()
+    Image.fromarray(processed).save(buffer, format="PNG")
+    buffer.seek(0)
+    return StreamingResponse(buffer, media_type="image/png")
 
 
 @router.get(

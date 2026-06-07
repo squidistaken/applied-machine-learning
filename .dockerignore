@@ -8,3 +8,15 @@
 .ruff_cache
 __pycache__
 config.yaml
+logs/
+data/
+models/
+checkpoints/
+results/
+.ipynb_checkpoints/
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.bin
+*.h5

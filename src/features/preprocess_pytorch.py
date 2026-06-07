@@ -1,12 +1,33 @@
+from typing import Callable, Optional
 from tqdm import tqdm
 from src.constants import DATA_DIR, LOGGER
 from src.features.image_preprocessor import ImagePreprocessor
+
+
+def _count_raw_images(classes: list[str]) -> int:
+    """Count all raw images across the train and test splits.
+
+    Args:
+        classes (list[str]): The list of classes.
+
+    Returns:
+        int: A count of the total number of images.
+    """
+    total = 0
+    raw_dir = DATA_DIR / "raw"
+    for split_name in ["train", "test"]:
+        for cls in classes:
+            class_dir = raw_dir / split_name / cls
+            if class_dir.is_dir():
+                total += len(list(class_dir.glob("*.jpeg")))
+    return total
 
 
 def preprocess_split(
     split_name: str,
     classes: list[str],
     preprocessor: ImagePreprocessor,
+    on_image: Optional[Callable[[], None]] = None,
 ) -> None:
     """
     Preprocess a split.
@@ -15,6 +36,8 @@ def preprocess_split(
         split_name (str): The split to process.
         classes (list[str]): The list of classes to process.
         preprocessor (ImagePreprocessor): The preprocessor instance.
+        on_image (Optional[Callable[[], None]]): Called once after each image
+                                                 is processed.
     """
     LOGGER.info(f"Preprocessing '{split_name}' split...")
 
@@ -69,9 +92,21 @@ def preprocess_split(
             except Exception as e:
                 LOGGER.error(f"Failed to preprocess {image_path}: {e}")
 
+            finally:
+                if on_image is not None:
+                    on_image()
 
-def preprocess_data() -> None:
-    """Preprocess the raw data."""
+
+def preprocess_data(
+    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+) -> None:
+    """Preprocess the raw data.
+
+    Args:
+        progress_callback (Optional[Callable[[int, int, str], None]]): The
+                                                                       progress
+                                                                       callback.
+    """
     input_dir = DATA_DIR / "raw"
     output_dir = DATA_DIR / "processed"
     if not input_dir.is_dir():
@@ -99,8 +134,25 @@ def preprocess_data() -> None:
     splits = ["train", "test"]
     preprocessor = ImagePreprocessor()
 
+    total = _count_raw_images(classes) if progress_callback else 0
+    counter = {"done": 0}
+
+    def _on_image() -> None:
+        counter["done"] += 1
+        if progress_callback and total:
+            progress_callback(
+                counter["done"],
+                total,
+                f"Preprocessing images ({counter['done']}/{total})",
+            )
+
     for split_name in splits:
-        preprocess_split(split_name, classes, preprocessor)
+        preprocess_split(
+            split_name,
+            classes,
+            preprocessor,
+            on_image=_on_image if progress_callback else None,
+        )
 
     LOGGER.info("Pytorch dataset preprocessing complete.")
 
