@@ -78,8 +78,8 @@ def test_preprocess_data(
     preprocessor_instance = mock_preprocess_split.call_args_list[0][0][2]
 
     mock_preprocess_split.assert_any_call(
-        "train", ["NORMAL"], preprocessor_instance
+        "train", ["NORMAL"], preprocessor_instance, on_image=None
     )
     mock_preprocess_split.assert_any_call(
-        "test", ["NORMAL"], preprocessor_instance
+        "test", ["NORMAL"], preprocessor_instance, on_image=None
     )

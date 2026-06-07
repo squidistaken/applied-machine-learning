@@ -67,7 +67,7 @@ def test_predict_invalid_file() -> None:
     assert "Invalid file type" in response.json()["detail"]
 
 
-@patch("src.api.routers.train.src.training.train.train_model")
+@patch("src.training.train.train_model")
 def test_train_model_dispatch(mock_train_model: MagicMock) -> None:
     """Test the training endpoint successfully dispatches a background task.
 
