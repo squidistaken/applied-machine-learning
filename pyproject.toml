@@ -1,7 +1,7 @@
 [project]
 name = "applied-machine-learning"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.2.0"
+description = "AML: Pneumonia Classification via Chest X-Rays"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

@@ -1,6 +1,15 @@
 # AML: Pneumonia Classification via Chest X-Rays
 Repository for the Applied Machine Learning course (WBAI065-05) at the University of Groningen.
 
+This project classifies chest X-rays as `NORMAL`, `BACTERIA`, or `VIRUS` to support pneumonia diagnosis. It trains and compares several models and ships them behind a FastAPI backend, an interactive Streamlit dashboard, and a CLI, all sharing the same data, preprocessing, training, and inference pipelines. Predictions come with an uncertainty estimate to flag unreliable results.
+
+## Team
+
+ * Anneke Catherine Naseef (S6490662)
+ * Marcus Harald Olof Persson (S5343798)
+ * Ignacio Jacob Uroz Rodríguez	(S5118913)
+ * Julian Wilbert Sprietsma	(S5096219)
+
 ## Running via Docker
 
 1. Build the image.
@@ -61,6 +70,18 @@ uv run streamlit run main.py
 ```
 
 The dashboard opens at [http://localhost:8501](http://localhost:8501) and expects the API at `API_URL` (default `http://127.0.0.1:8000`, configurable in `config.yaml`).
+
+## API
+
+A [FastAPI](https://fastapi.tiangolo.com/) backend exposes the data, training, and inference pipelines over HTTP. It is a Level 2 REST API: distinct resource URIs, proper use of HTTP verbs, and meaningful status codes. The dashboard talks to it exclusively, but it can also be used directly. It is grouped into the following routers:
+
+ * `/data`: Download and preprocess the dataset.
+ * `/models`: List available and trained models.
+ * `/metrics`: Retrieve saved metrics and evaluation plots.
+ * `/train`: Launch and monitor training runs.
+ * `/predict`: Classify an uploaded X-ray, with an uncertainty estimate.
+
+Interactive, auto-generated documentation is available at [http://localhost:8000/docs](http://localhost:8000/docs) once the backend is running.
 
 ## Command Line Interface (CLI)
 

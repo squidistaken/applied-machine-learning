@@ -19,9 +19,9 @@ with col1:
         """
 We classify chest X-ray images into **three clinically meaningful classes**:
 
-- **NORMAL** — no signs of pneumonia.
-- **BACTERIA** — bacterial pneumonia.
-- **VIRUS** — viral pneumonia.
+- **NORMAL:** No signs of pneumonia.
+- **BACTERIA:** Bacterial pneumonia.
+- **VIRUS:** Viral pneumonia.
 
 The dataset is the
 [Labeled Chest X-Ray Images](https://www.kaggle.com/datasets/tolgadincer/labeled-chest-xray-images)
@@ -33,9 +33,9 @@ flagged as *unreliable* rather than silently trusted.
 with col2:
     st.info(
         "**Three models** are supported:\n\n"
-        "- 🧠 **CNN** — a compact baseline convolutional network.\n"
-        "- 🏗️ **ResNet** — a fine-tuned ResNet-18.\n"
-        "- 🌳 **LightGBM** — gradient-boosted trees on HOG features.",
+        "- **CNN:** a compact baseline convolutional network.\n"
+        "- **ResNet** — a fine-tuned ResNet-18.\n"
+        "- **LightGBM** — gradient-boosted trees on HOG features.",
         icon="📦",
     )
 
@@ -44,9 +44,9 @@ st.markdown(
     """
 | Page | What you can do |
 | --- | --- |
-| 🧪 **Data & Preprocessing** | Download the dataset and run the preprocessing pipeline with live progress, then compare images *before* and *after* preprocessing. |
-| ⚙️ **Model Training** | Configure a model (with model-specific hyperparameters), launch training, watch live metrics, and review the final evaluation plots. |
-| 🔬 **Showcase** | Upload your own X-ray, see how it is preprocessed, and get a classification with calibrated scores and a clear reliability verdict. |
+| **Data & Preprocessing** | Download the dataset and run the preprocessing pipeline with live progress, then compare images *before* and *after* preprocessing. |
+| **Model Training** | Configure a model (with model-specific hyperparameters), launch training, watch live metrics, and review the final evaluation plots. |
+| **Showcase** | Upload your own X-ray, see how it is preprocessed, and get a classification with calibrated scores and a clear reliability verdict. |
 """
 )
 

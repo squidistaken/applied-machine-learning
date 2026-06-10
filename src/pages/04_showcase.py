@@ -57,9 +57,9 @@ file_bytes = uploaded.getvalue()
 st.divider()
 left, right = st.columns([1, 1], gap="large")
 
-# region Images (left) — After is the default tab since it's what the model sees
+# region Images
 with left:
-    st.subheader("🩻 X-ray")
+    st.subheader("X-ray")
     after_tab, before_tab = st.tabs(
         ["After (model input)", "Before (uploaded)"]
     )
@@ -73,7 +73,7 @@ with left:
         st.image(Image.open(io.BytesIO(file_bytes)), use_container_width=True)
 # endregion
 
-# region Prediction (right) — runs automatically and follows the model picker
+# region Prediction
 with right:
     st.subheader("📊 Results")
     model_name = st.selectbox(
@@ -98,20 +98,20 @@ with right:
     # Clear good/bad verdict.
     if is_uncertain:
         st.error(
-            f"⚠️ **{predicted}** — but this prediction is **UNRELIABLE**. "
+            f"⚠️ **{predicted}** - but this prediction is **UNRELIABLE**. "
             "The predictive entropy is above the clinical safety threshold; a "
             "human expert should review this scan.",
             icon="🚨",
         )
     elif confidence >= 0.70:
         st.success(
-            f"✅ **{predicted}** — confident prediction "
+            f"✅ **{predicted}** - confident prediction "
             f"({confidence:.0%} probability). {CLASS_HELP.get(predicted, '')}",
             icon="🩺",
         )
     else:
         st.warning(
-            f"🤔 **{predicted}** — moderate confidence "
+            f"🤔 **{predicted}** - moderate confidence "
             f"({confidence:.0%} probability). Consider review.",
             icon="⚖️",
         )
