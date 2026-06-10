@@ -35,7 +35,7 @@ def _poll_job(job: str, label: str) -> dict:
     while True:
         try:
             data = api_client.get_data_status(job).json()
-        except Exception as e:  # noqa: BLE001 - surface any polling error
+        except Exception as e:
             bar.empty()
             st.error(f"Could not read {label} status: {e}")
             return {"status": "failed", "error": str(e)}
@@ -45,7 +45,7 @@ def _poll_job(job: str, label: str) -> dict:
         message = data.get("message") or f"Running {label}..."
 
         if progress is None:
-            # Indeterminate stage: animate a capped, oscillating bar.
+            # Indeterminate stage: We animate a capped, oscillating bar.
             tick += 1
             bar.progress(min(0.9, 0.1 + (tick % 9) * 0.1), text=message)
         else:
@@ -142,12 +142,10 @@ st.markdown(
     "version, exactly as the models receive it."
 )
 
-# Split & sample picker sit directly above the image.
 ccol1, ccol2 = st.columns([1, 3])
 with ccol1:
     split = st.selectbox("Split", options=["train", "test"], key="viz_split")
 
-# Fetch metadata to know how many images are available for this split.
 meta_resp = api_client.get_data_metadata(
     data_type="raw", split=split, page=1, limit=1
 )

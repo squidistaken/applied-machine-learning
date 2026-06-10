@@ -19,7 +19,7 @@ if not api_client.is_api_running():
     )
     st.stop()
 
-# Per-model sensible defaults (mirrors the API's fallbacks).
+# Per-model sensible defaults.
 MODEL_DEFAULTS = {
     "cnn": {"epochs": 20, "learning_rate": 0.0001},
     "resnet": {"epochs": 10, "learning_rate": 0.0001},
@@ -28,10 +28,10 @@ MODEL_DEFAULTS = {
 IS_PYTORCH = {"cnn": True, "resnet": True, "lgbm": False}
 
 PLOT_TITLES = {
-    "training_history": "📈 Training History",
-    "confusion_matrix": "🔢 Confusion Matrix (test)",
-    "reliability_diagram": "🎯 Reliability Diagram (test)",
-    "selective_prediction": "🛟 Selective Prediction (test)",
+    "training_history": "Training History",
+    "confusion_matrix": "Confusion Matrix (Test Set)",
+    "reliability_diagram": "Reliability Diagram (Test Set)",
+    "selective_prediction": "Selective Prediction (Test Set)",
 }
 
 # region Model selection & status
@@ -48,15 +48,13 @@ model_name = st.selectbox(
 status_resp = api_client.get_model_status(model_name)
 if status_resp.status_code == 200:
     info = status_resp.json()
-    badge = (
-        "✅ trained" if info.get("status") == "completed" else "⏳ not trained"
-    )
+    badge = "Trained" if info.get("status") == "completed" else "Not Trained"
     st.caption(f"Current status: **{badge}**")
 # endregion
 
 st.divider()
 
-# region Configuration (model-specific)
+# region Configuration
 st.header("Configuration")
 defaults = MODEL_DEFAULTS[model_name]
 is_torch = IS_PYTORCH[model_name]
@@ -88,7 +86,6 @@ with c2:
     )
 with c3:
     if is_torch:
-        # PyTorch-only knobs.
         batch_size = st.number_input(
             "Batch size", min_value=1, max_value=256, value=32, step=1
         )
@@ -102,7 +99,6 @@ with c3:
         )
         num_leaves, max_depth = 31, -1
     else:
-        # LightGBM-only knobs — no batch size / weight decay for trees.
         num_leaves = st.number_input(
             "Number of leaves", min_value=2, max_value=255, value=31, step=1
         )
@@ -124,8 +120,6 @@ else:
         "🧠 Batch size & weight decay are hidden — they don't apply to LightGBM."
     )
 
-# Uncertainty quantification gets its own framed callout — it's a headline
-# capability, not just another knob buried in the parameter grid.
 with st.container(border=True):
     ucol1, ucol2 = st.columns([4, 1], vertical_alignment="center")
     with ucol1:
@@ -140,7 +134,7 @@ with st.container(border=True):
 start_training = st.button("🚀 Start training", type="primary")
 # endregion
 
-# region Live training
+# region Live Training
 if start_training:
     payload = {
         "model_name": model_name,
@@ -165,7 +159,7 @@ if start_training:
         while True:
             try:
                 data = api_client.get_training_status(model_name).json()
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 st.error(f"Could not read training status: {e}")
                 break
 
@@ -222,7 +216,7 @@ if metrics_resp.status_code == 200:
         "Macro F1",
         f"{m['macro_f1']:.3f}",
         help="Harmonic mean of precision and recall, averaged equally across "
-        "classes. Robust to class imbalance — higher is better (max 1.0).",
+        "classes. Robust to class imbalance - higher is better (max 1.0).",
     )
     mc[1].metric(
         "Precision",
@@ -279,7 +273,6 @@ if metrics_resp.status_code == 200:
 else:
     st.info("No metrics available yet — train this model to generate them.")
 
-# Evaluation plots served by the API.
 plots_resp = api_client.list_plots(model_name)
 available = (
     plots_resp.json().get("plots", []) if plots_resp.status_code == 200 else []
