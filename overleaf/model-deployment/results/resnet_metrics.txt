@@ -4,7 +4,7 @@
 
 HYPERPARAMETERS:
 ----------------
-Learning Rate: 0.0001
+Learning Rate: 0.001
 Max Epochs: 10
 Final Epoch: 10
 Batch Size: 32
